@@ -47,3 +47,22 @@ grep -ri "<任务关键词>" /Users/xuxun22/work/cijian/llmwiki/
 - 明文密钥/口令**永不写入**（写存放位置即可，见 env-and-secrets）
 - 条目要短、事实性、可 grep；一个条目一个主题
 - 已被 docs/（04 契约、05 数据模型、ADR）正式记载的设计决策，在 wiki 里放链接即可，不要复制正文
+
+### 4. 提交前 Harness 检查清单（强制，全绿才准 push）
+
+改动代码后逐仓执行（细则见 pages/engineering-standards.md）：
+
+```bash
+# cijian-api
+cd ~/work/cijian-api && npm run typecheck && npm test && npm run build
+# cijian-site
+cd ~/work/cijian-site && npm run build
+# cijian-agent
+cd ~/work/cijian-agent && python3 -m compileall -q cijian_agent && ruff check cijian_agent
+# cijian（本仓）
+#    核对 llmwiki/index.md、log.md 与 docs 交叉引用一致
+```
+
+push 后确认 CI 绿：`gh run list -R xuxun22/<repo> --limit 1`——红了必须修，禁止绕过。
+cijian-api 推 main 会自动上线（服务器 5 分钟 timer 拉取），部署后抽查
+`https://api.whereami.cn/api/health`。

@@ -5,6 +5,7 @@
 ## 总览
 
 - [overview](pages/overview.md) — 此间系统全景：四个仓、服务器、域名、agent、数据流
+- [engineering-standards](pages/engineering-standards.md) — **Harness 规则：每仓必跑测试、lint/类型规则、产品层判定（用户友好/风格统一/产品语义）**，SKILL.md 内置强制清单
 - [deployment-tencent-vm](pages/deployment-tencent-vm.md) — 腾讯云 vm-0-4-ubuntu 初始部署实录与拓扑
 - [print-pipeline](pages/print-pipeline.md) — 打印闭环的状态机、租约、重试、防重打
 - [env-and-secrets](pages/env-and-secrets.md) — 密钥与口令的存放位置、轮换方法

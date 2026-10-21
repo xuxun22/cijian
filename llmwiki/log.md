@@ -1,5 +1,12 @@
 # 时间线（追加式，勿改写历史条目）
 
+## [2026-10-22] howto | Harness 规则成文：每仓测试/lint/产品判定 + enforce 接线
+
+新增 [engineering-standards](pages/engineering-standards.md)：每仓校验命令、类型与 lint 规则、
+产品层判定（等待必有反馈/错误文案人话/纸墨朱砂令牌/契约先行/noindex/防重打优先）。
+enforce 接线：api CI 增加 typecheck 关卡、agent CI 升级 ruff+compileall、
+SKILL.md 内置「提交前检查清单」。推动因：用户要求规则可校验、可强制执行。
+
 ## [2026-10-22] fix | 任务卡「已接受」：agent 漏报 printing 致租约超时
 
 见 [print-pipeline](pages/print-pipeline.md) §实战记录。修复：lp 提交成功即上报 printing（租约 600s），

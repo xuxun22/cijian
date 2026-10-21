@@ -1,5 +1,10 @@
 # 时间线（追加式，勿改写历史条目）
 
+## [2026-10-22] fix | 任务卡「已接受」：agent 漏报 printing 致租约超时
+
+见 [print-pipeline](pages/print-pipeline.md) §实战记录。修复：lp 提交成功即上报 printing（租约 600s），
+轮询期间每 4 分钟续租；顺带照片 fit-to-page 单页打印、超时默认放宽到 30 分钟。agent v0.1.2。
+
 ## [2026-10-22] seed | llmwiki 初始化
 
 以 Karpathy llmwiki 模式初始化本维基；回填 2026-10-18 ~ 10-22 初始部署期间的 7 条经验。

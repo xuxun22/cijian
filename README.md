@@ -27,10 +27,14 @@ docs/
 ├── 05-data-model.md         SQLite 模式 / 文件存储 / TTL 策略
 ├── 06-security.md           鉴权 / 密钥 / 传输 / 上传安全
 ├── 07-deploy-cicd.md        各仓部署与 CI/CD 手册
-└── adr/                     架构决策记录 ADR-001 ~ 007
-repos.yaml                   代码仓清单（建仓脚本的数据源）
-scaffold/                    各仓最小骨架（README + CI，无业务逻辑）
-scripts/bootstrap-repos.sh   按 repos.yaml 自动建仓并推送
+├── adr/                     架构决策记录 ADR-001 ~ 007
+├── llmwiki/                 # 开发经验维基（LLM 维护，Karpathy 模式）
+│   ├── SKILL.md               # skill 定义（已装到 ~/.config/opencode/skill/llmwiki/）
+│   ├── index.md · log.md      # 条目目录 + 时间线
+│   └── pages/                 # 总览 / 部署实录 / 打印管线 / 踩坑记录
+├── repos.yaml               代码仓清单（建仓脚本的数据源）
+├── scaffold/                各仓最小骨架（README + CI，无业务逻辑）
+├── scripts/bootstrap-repos.sh 按 repos.yaml 自动建仓并推送
 ```
 
 ## 建仓（一次性）
@@ -45,11 +49,13 @@ gh auth login                    # 前提：GitHub CLI 已登录
 ## 里程碑状态
 
 - [x] Phase 1 · 文档仓改造 + 全套文档
-- [ ] Phase 2 · bootstrap 建三个代码仓
-- [ ] M1 鉴权 · [ ] M2 上传+任务 · [ ] M3 打印闭环 · [ ] M4 状态页 · [ ] M5 运维收尾
+- [x] Phase 2 · bootstrap 建三个代码仓
+- [x] M1 鉴权 · [x] M2 上传+任务(API) · [x] M3 打印闭环 · [ ] M4 状态页(前端) · [x] M5 运维收尾(API)
+- [x] 初始部署（api 上线 + 本机 agent 常驻 + E2E 出纸，2026-10-21/22）
 
 ## 写文档的规矩
 
 - 改接口先改 `04-api-contract.md`，改数据先改 `05-data-model.md`，然后才是代码
 - 新的架构取舍 → 新增一条 ADR（一页纸：背景 / 决策 / 后果）
+- **开发/测试中踩的坑 → 沉淀进 `llmwiki/`**（OpenCode skill `llmwiki` 会引导：开工先查、解决必记）
 - 里程碑完成 → 在 `00-execution-plan.md §4` 打 ✔ 并在代码仓合入

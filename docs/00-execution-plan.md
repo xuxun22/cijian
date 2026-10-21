@@ -4,7 +4,7 @@
 > 业务代码各自成仓，由脚本自动创建，CI/CD 在各代码仓内配置。
 
 - 日期：2026-10-21
-- 状态：Phase 1 已完成；Phase 2（建仓）待 `gh auth login` 后执行
+- 状态：Phase 1/2 已完成；**M1–M3、M5（API 侧）已实现，初始部署完成，打印闭环 E2E 已验证**（2026-10-21/22）。待办：M2 前端工作台、M4 状态页、CI/CD 接线（TS_AUTHKEY）
 
 ---
 
@@ -111,11 +111,11 @@ scripts/bootstrap-repos.sh   gh 自动建仓 + 推送脚手架
 
 | 里程碑 | 内容 | 验收标准 |
 |---|---|---|
-| M1 鉴权 | 登录（方式见 §7 决策 4）、JWT、site 登录态 | 匿名访问受控接口 401 |
-| M2 上传+建任务 | multipart 上传 → 临时文件；选择打印机地点；建打印任务 | 浏览器完整走通「上传→选地点→入队」 |
-| M3 Agent 打印闭环 | 轮询领任务（租约）→ 下载 → CUPS 打印 → 上报 | 地点服务器自动出纸；状态流转可见 |
+| ✅ M1 鉴权（10-22） | 登录（单口令 + JWT）、登录限速 5/min/IP | 15 项集成测试全绿；匿名访问受控接口 401 |
+| ✅ M2 上传+建任务（10-22，API 侧） | multipart 上传（magic bytes/TTL/水位）→ 选地点 → 建任务 | curl 全流程走通；浏览器走通待前端 |
+| ✅ M3 Agent 打印闭环（10-21，E2E） | 轮询领任务（租约）→ 下载 → CUPS 打印 → 上报 | 真机出纸验证通过（Mi 打印机，17s） |
 | M4 查看结果 | 任务列表 + 状态流（queued→printing→done/failed） | 站点实时看到每单进度（范围见 §7 决策 5） |
-| M5 运维收尾 | TTL 清理、重试策略、心跳掉线告警、限流 | kill agent 中途不重复打印；磁盘可回收 |
+| ✅ M5 运维收尾（10-22，API 侧） | TTL 清理、重试策略、租约、限流 | 集成测试覆盖重试/退避/终态；掉线告警待做 |
 
 每个里程碑 = 代码仓一次 PR/推送 + 本仓对应文档更新。
 
@@ -176,7 +176,7 @@ Agent 侧（每地点独立 Agent Key）
 
 ## 8. 立即行动项
 
-1. 你：`gh auth login`（当前 token 已失效）
-2. 我：`./scripts/bootstrap-repos.sh`（Phase 2 建仓：site 并入暂存代码 + api/agent 骨架）
-3. 你：按 07-deploy-cicd.md 接线（Vercel 导入 site 仓；api 仓配 3 secrets + DEPLOY_ENABLED）
-4. 我：M1 起在各代码仓实现（登录 → 上传+任务 → 打印闭环 → 状态页 → 运维）
+1. ✅ Phase 2 建仓 + M1–M3/M5（API 侧）实现 + 初始部署 + 打印闭环 E2E（均已完成）
+2. 你：DNSPod 给 whereami.cn 加记录——主机 `api`，类型 `A`，值 `43.159.141.66`（加完 api.whereami.cn 即生效，Caddy 自动签证书）
+3. 你（可选，启用 CI/CD 自动部署）：Tailscale 管理台生成 auth key → 仓库 Secret `TS_AUTHKEY`；其余 DEPLOY_* secrets 已预配好，最后把 Variables `DEPLOY_ENABLED` 设为 `true`
+4. 我：M2 前端工作台 + M4 状态页（cijian-site UI）

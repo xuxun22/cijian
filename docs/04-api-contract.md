@@ -148,6 +148,19 @@ POST /api/agents/jobs/:id/report
 - `failed`：`attempts<3` → 回 `queued`（租约=now+30s 作退避）；`attempts≥3` → `failed` 终态
 - 每次上报追加一条 `job_events`
 
+### 查询任务（agent 崩溃恢复用）
+
+```
+GET /api/agents/jobs/:id
+→ 200 { "id": "j_9f3…", "handler": "print", "status": "claimed", "attempts": 1,
+        "lease_expires_at": "…", "params": {…},
+        "file": { "url": "/files/<新签名的token>", "orig_name": "…", "mime": "…", "size": 123 } | null }
+→ 404 / 403   ← 任务不存在 / 不属于本机
+```
+
+agent 重启时据此判断：租约仍有效 → 恢复处理（file.url 为**新签名的下载地址**）；
+已过期或已被重派 → 放弃本地副本，由服务端重派。
+
 ### 签名文件下载
 
 ```
@@ -162,3 +175,7 @@ token = base64url(`file_id.job_id.printer_id.exp`) + HMAC-SHA256 签名，密钥
 ## 变更流程
 
 接口不兼容变更：先在本文档加「v1.x 变更记录」小节，三仓同步实现后再合入；家庭规模不引入 URL 版本号。
+
+## v1.1 变更记录（2026-10-22）
+
+- 新增 `GET /api/agents/jobs/:id`（agent 崩溃恢复查询，返回含新签名 file.url；cijian-api 已实现）。

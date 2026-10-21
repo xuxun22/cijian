@@ -25,3 +25,11 @@ api 是单机有状态服务：鉴权、文件收发、任务调度、TTL 清理
 - ✅ better-sqlite3 同步 API，事务简单可靠
 - ⚠️ better-sqlite3 含原生编译——用 docker 镜像规避服务器环境问题
 - ⚠️ 单实例运行（SQLite 写锁），不可水平扩展——规模到了再换
+
+## 修订（2026-10-22）：better-sqlite3 → Node 内置 node:sqlite
+
+实践验证：better-sqlite3 在新 Node（26）上无预编译产物，node-gyp 源码编译失败（本机即翻车）。
+改用 **Node ≥22.13 内置的 `node:sqlite`（DatabaseSync）**：本地 / CI / Docker 三处零原生编译，
+Docker 镜像不再需要 python3/make/g++。API 近似（prepare/run/get/all/exec），
+事务改为轻量 `tx(db, fn)` 助手；Node 基线升为 24 LTS（Docker 镜像 node:24-bookworm-slim）。
+迁移中的类型/测试坑已沉淀至 llmwiki/pages/gotcha-node-sqlite.md。

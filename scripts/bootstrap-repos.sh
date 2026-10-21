@@ -44,7 +44,7 @@ for NAME in $TARGETS; do
   DESC=$(field "$NAME" description)
   SRC=$(field "$NAME" source)
   FULL="$OWNER/$NAME"
-  say "$FULL（$VIS）"
+  say "${FULL}（${VIS}）"
 
   # 1. 建仓（已存在则跳过）
   if gh repo view "$FULL" >/dev/null 2>&1; then

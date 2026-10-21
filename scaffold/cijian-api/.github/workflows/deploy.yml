@@ -1,0 +1,25 @@
+# 部署到腾讯云服务器。
+# 接线步骤（文档仓 docs/07-deploy-cicd.md §cijian-api）：
+#   1. Secrets: DEPLOY_HOST / DEPLOY_USER / DEPLOY_SSH_KEY
+#   2. Variables: DEPLOY_ENABLED=true   ← 配齐 secrets 后再设，作为部署开关
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH 部署
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd /opt/cijian-api/app
+            git pull --ff-only
+            docker compose up -d --build

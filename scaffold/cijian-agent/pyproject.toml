@@ -1,0 +1,7 @@
+# 骨架元信息。依赖、打包与入口脚本在 M3（打印闭环）实现时补齐。
+
+[project]
+name = "cijian-agent"
+version = "0.0.1"
+description = "此间任务守护进程：拉取任务 → 执行（打印）→ 上报"
+requires-python = ">=3.10"

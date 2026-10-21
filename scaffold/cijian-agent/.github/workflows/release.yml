@@ -1,0 +1,22 @@
+# 打 v* tag 时发布源码包。M3 起改为：install.sh + 打包产物一并附上。
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: 打源码包
+        run: |
+          mkdir -p dist
+          git archive --format=tar.gz --prefix=cijian-agent/ \
+            -o "dist/cijian-agent-${GITHUB_REF_NAME}.tar.gz" HEAD
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*

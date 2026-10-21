@@ -1,0 +1,23 @@
+# cijian · 代码仓清单
+# scripts/bootstrap-repos.sh 依据本文件自动建仓并推送骨架。
+# 格式固定（脚本逐行解析，字段顺序不可变）：
+#   - name / visibility / description / source
+# source = 业务代码暂存目录（相对本仓根，bootstrap 时并入该仓；留空 "" 表示暂无）。
+
+owner: xuxun22
+
+repos:
+  - name: cijian-site
+    visibility: private
+    description: 此间站点（Astro）—— 公开内容 + 登录后打印工作台，部署于 Vercel
+    source: ../cijian-site
+
+  - name: cijian-api
+    visibility: private
+    description: 此间后端（Node 22 + Hono + SQLite）—— 鉴权、文件、打印任务调度
+    source: ""
+
+  - name: cijian-agent
+    visibility: private
+    description: 此间任务守护进程（Python）—— 拉取任务并执行（打印），纯出站
+    source: ""

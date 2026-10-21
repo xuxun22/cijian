@@ -1,5 +1,12 @@
 # 时间线（追加式，勿改写历史条目）
 
+## [2026-10-22] fix | CI/CD 打通：Tailscale SSH check 模式挂起 runner
+
+deploy 挂起 12 分钟零输出 → 根因是 Tailscale 默认 SSH 策略 check 模式（新设备需浏览器确认，
+runner 无法完成）。用户改 accept + 换 ephemeral auth key 后，push 即部署全链路打通
+（Tailscale 接入 → SSH → git pull → compose 重建 → healthy，全程 <1 分钟）。
+见 [gotcha-tailscale-ssh-check-mode](pages/gotcha-tailscale-ssh-check-mode.md)。
+
 ## [2026-10-22] howto | Harness 规则成文：每仓测试/lint/产品判定 + enforce 接线
 
 新增 [engineering-standards](pages/engineering-standards.md)：每仓校验命令、类型与 lint 规则、

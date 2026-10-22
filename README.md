@@ -27,6 +27,7 @@ docs/
 ├── 05-data-model.md         SQLite 模式 / 文件存储 / TTL 策略
 ├── 06-security.md           鉴权 / 密钥 / 传输 / 上传安全
 ├── 07-deploy-cicd.md        各仓部署与 CI/CD 手册
+├── 09-miniprogram-plan.md   微信小程序支持计划（待确认）
 ├── adr/                     架构决策记录 ADR-001 ~ 007
 ├── llmwiki/                 # 开发经验维基（LLM 维护，Karpathy 模式）
 │   ├── SKILL.md               # skill 定义（已装到 ~/.config/opencode/skill/llmwiki/）

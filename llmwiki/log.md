@@ -14,6 +14,16 @@ runner 无法完成）。用户改 accept + 换 ephemeral auth key 后，push �
 enforce 接线：api CI 增加 typecheck 关卡、agent CI 升级 ruff+compileall、
 SKILL.md 内置「提交前检查清单」。推动因：用户要求规则可校验、可强制执行。
 
+## [2026-10-24] fix | 打印机「假在线」盲区：心跳携带 CUPS 硬件状态
+
+**症状**：打印机断电后，工作台仍显示「在线」（agent 心跳正常），任务默默排队。
+**根因**：心跳只报了 agent 存活，没报 CUPS 打印机硬件状态——`lpstat -p` 的
+"Looking for printer." 状态消息没人采集。
+**修复**：心跳携带 `printer_state`（unreachable=设备不可达），API 存 `printers.device_state`，
+前端三态展示（在线 / 打印机未响应 / 离线）；打印等待期间不可达超 3 分钟 → 取消 CUPS
+任务并报失败（防止来电后突然补打积压任务）。
+见 [print-pipeline](pages/print-pipeline.md) §两种离线。
+
 ## [2026-10-22] fix | 任务卡「已接受」：agent 漏报 printing 致租约超时
 
 见 [print-pipeline](pages/print-pipeline.md) §实战记录。修复：lp 提交成功即上报 printing（租约 600s），

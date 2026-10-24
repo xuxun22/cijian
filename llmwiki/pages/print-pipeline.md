@@ -41,6 +41,15 @@ done 上报被 409（租约过期），任务卡死 claimed，直到 sweeper 才
 顺带照片 fit-to-page、打印超时放宽 30 分钟。修复后事件序列
 queued→claimed→printing→(printing 续租)→done 全部在网页可见。
 
+## 实战记录（2026-10-24）：打印机断电后「假在线」
+
+**症状**：用户给打印机断电（`lpstat -p` 显示 `Looking for printer.`，队列任务挂 28 小时），
+工作台却仍显示「在线」——agent 心跳正常，没人采集 CUPS 的设备状态。
+**教训**：「agent 存活」≠「打印机可用」，两者要分开观测。心跳 detail 现携带
+`printer_state`（lpstat -p 解析：printing/idle/unreachable/paused）。
+**修复**（agent v0.2.0 + api v1.2）：心跳携带硬件状态 → `printers.device_state` →
+前端三态展示；打印等待中不可达超 3 分钟 → 取消 CUPS 任务并报失败（防来电补打）。
+
 ## 排障速查
 
 - 任务卡 `claimed`：agent 死了。等租约过期被 sweeper 重派，或手动

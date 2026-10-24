@@ -30,6 +30,7 @@ CREATE TABLE printers (
   color         INTEGER NOT NULL DEFAULT 1,   -- 能力：彩色
   duplex        INTEGER NOT NULL DEFAULT 0,   -- 能力：双面
   status        TEXT NOT NULL DEFAULT 'offline',
+  device_state  TEXT NOT NULL DEFAULT '',     -- agent 心跳上报的打印机硬件状态（ok/unreachable）
   last_seen_at  TEXT,
   created_at    TEXT NOT NULL
 );

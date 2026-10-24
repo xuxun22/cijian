@@ -64,8 +64,13 @@ GET /api/printers
   { "id": "p_laowu", "name": "老家打印机", "location": "外婆家",
     "online": true, "handlers": ["print"],
     "color": true, "duplex": false,
+    "deviceState": "unreachable",
     "last_seen_at": "2026-10-21T07:59:40Z" } ] }
 ```
+
+`online` = `last_seen_at` 距今 ≤60 秒；`deviceState` 是 agent 心跳上报的**打印机硬件状态**
+（`ok` 在线正常 / `unreachable` 打印机不可达 / 空=未知）。三态展示：
+**在线**（online+ok）、**打印机未响应**（online+unreachable，可排队但提示）、**离线**（!online）。
 
 `online` = `last_seen_at` 距今 ≤60 秒。
 
@@ -106,12 +111,17 @@ GET /api/print-jobs/:id
 
 ```
 POST /api/agents/heartbeat
-{ "handlers": ["print"], "version": "0.1.0",
-  "status": "ok", "detail": { "cups_queue_len": 0 } }
+{ "handlers": ["print"], "version": "0.2.0",
+  "status": "ok",                              // ok | printer-unreachable
+  "printer_state": "unreachable",              // 可选：printing|idle|unreachable|paused|unknown
+  "detail": { "cups_queue_len": 0,
+              "printer_state": "unreachable",
+              "printer_message": "Looking for printer." } }
 → 200 { "now": "2026-10-21T08:00:00Z" }
 ```
 
-副作用：刷新对应 printer 的 `last_seen_at` / `handlers` / 能力字段。
+副作用：刷新对应 printer 的 `last_seen_at` / `handlers` / `device_state` / 能力字段。
+`printer_state=unreachable`（CUPS "Looking for printer."）表示 **agent 在线但打印机硬件不可达**（断电/离线）——与 agent 掉线是两种不同的故障。
 
 ### 领取任务
 
@@ -175,6 +185,11 @@ token = base64url(`file_id.job_id.printer_id.exp`) + HMAC-SHA256 签名，密钥
 ## 变更流程
 
 接口不兼容变更：先在本文档加「v1.x 变更记录」小节，三仓同步实现后再合入；家庭规模不引入 URL 版本号。
+
+## v1.2 变更记录（2026-10-24）
+
+- 心跳新增可选 `printer_state`（CUPS 硬件状态，unreachable=设备不可达），服务端存入 `printers.device_state`
+- `GET /api/printers` 响应新增 `deviceState` 字段（前端三态：在线 / 打印机未响应 / 离线）
 
 ## v1.1 变更记录（2026-10-22）
 

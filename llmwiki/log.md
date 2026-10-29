@@ -1,4 +1,26 @@
-# 时间线（追加式，勿改写历史条目）
+# 时间线（最新在前 · 追加式，勿改写历史条目）
+
+## [2026-10-24] gotcha | CORS 来源不匹配：Vercel 主域是 www
+
+打印工作台登录全被 CORS 拦截 → 根因是 Vercel 把 www 设为主域，前端 Origin 为
+`https://www.whereami.cn` 而白名单只有裸域。修复：CORS 改为正则放行 `*.whereami.cn` 家族。
+同日清理了一次 compose 并发竞态留下的孤儿容器（18e7b3be9f95_app-api-1）。
+
+## [2026-10-24] fix | 打印机「假在线」盲区：心跳携带 CUPS 硬件状态
+
+**症状**：打印机断电后，工作台仍显示「在线」（agent 心跳正常），任务默默排队。
+**根因**：心跳只报了 agent 存活，没报 CUPS 打印机硬件状态——`lpstat -p` 的
+"Looking for printer." 状态消息没人采集。
+**修复**：心跳携带 `printer_state`（unreachable=设备不可达），API 存 `printers.device_state`，
+前端三态展示（在线 / 打印机未响应 / 离线）；打印等待期间不可达超 3 分钟 → 取消 CUPS
+任务并报失败（防止来电后突然补打积压任务）。
+见 [print-pipeline](pages/print-pipeline.md) §两种离线。
+
+## [2026-10-22] mp | 微信小程序打印工作台（M-mp-1~3）
+
+原生 TS；口令登录、相册/拍摄/聊天文件三入口上传（wx.uploadFile 原生进度）、
+打印机三态、任务列表轮询 + 事件时间线、转发家庭群卡片。仓库 `cijian-mp`。
+上线前置：小程序备案 + whereami.cn 域名 ICP（见 docs/09）。
 
 ## [2026-10-22] fix | CI/CD 打通：Tailscale SSH check 模式挂起 runner
 
@@ -13,16 +35,6 @@ runner 无法完成）。用户改 accept + 换 ephemeral auth key 后，push �
 产品层判定（等待必有反馈/错误文案人话/纸墨朱砂令牌/契约先行/noindex/防重打优先）。
 enforce 接线：api CI 增加 typecheck 关卡、agent CI 升级 ruff+compileall、
 SKILL.md 内置「提交前检查清单」。推动因：用户要求规则可校验、可强制执行。
-
-## [2026-10-24] fix | 打印机「假在线」盲区：心跳携带 CUPS 硬件状态
-
-**症状**：打印机断电后，工作台仍显示「在线」（agent 心跳正常），任务默默排队。
-**根因**：心跳只报了 agent 存活，没报 CUPS 打印机硬件状态——`lpstat -p` 的
-"Looking for printer." 状态消息没人采集。
-**修复**：心跳携带 `printer_state`（unreachable=设备不可达），API 存 `printers.device_state`，
-前端三态展示（在线 / 打印机未响应 / 离线）；打印等待期间不可达超 3 分钟 → 取消 CUPS
-任务并报失败（防止来电后突然补打积压任务）。
-见 [print-pipeline](pages/print-pipeline.md) §两种离线。
 
 ## [2026-10-22] fix | 任务卡「已接受」：agent 漏报 printing 致租约超时
 

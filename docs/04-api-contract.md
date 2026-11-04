@@ -45,6 +45,23 @@ POST /api/auth/login
 
 JWT：HS256，有效期 7 天，payload `{ "sub": "family", "iat": …, "exp": … }`。无刷新令牌，过期重输口令。
 
+### 微信小程序登录（v1.3）
+
+```
+POST /api/auth/wx-login
+{ "code": "<wx.login 的 code>", "invite": "邀请码（首次绑定必填）", "name": "称呼（首次可选，≤20 字）" }
+→ 200 { "token": "<jwt>", "expires_at": "…", "user": { "id": "u_…", "name": "…", "is_new": true } }
+→ 401 wx_invite_required   ← openid 未绑定且未带/错邀请码
+→ 401 wx_code_invalid      ← code 无效或已被使用（客户端重新 wx.login 后重试）
+→ 403 banned               ← 该微信已被禁用
+→ 429 rate_limited         ← 同 IP 每分钟 >10 次
+→ 503 unavailable          ← 服务端未配置 WX 或微信接口不可用
+```
+
+- 服务端以 code 调微信 `jscode2session` 换 **openid**，与 `users` 表一一对应
+- **邀请码复用站点口令**（`CIJIAN_PASSPHRASE_HASH`），仅首次绑定时校验一次，之后静默登录
+- JWT 与口令登录同构（`sub` 为 `u_…` 用户 id）；轮换口令不影响已绑定用户
+
 ### 上传文件
 
 ```
@@ -98,6 +115,7 @@ GET /api/print-jobs?limit=50&status=queued
 → 200 { "jobs": [ { "id": "j_9f3…", "status": "printing",
       "file": { "orig_name": "合影.jpg" },
       "printer": { "id": "p_laowu", "name": "老家打印机", "location": "外婆家" },
+      "user_name": "外婆",                    ← 提交者称呼（v1.3；网页口令登录/历史任务为 ""）
       "copies": 2, "attempts": 1, "last_message": null,
       "created_at": "…", "updated_at": "…" } ] }
 

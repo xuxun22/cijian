@@ -50,6 +50,7 @@ CREATE TABLE print_jobs (
   id            TEXT PRIMARY KEY,             -- j_9f3…
   file_id       TEXT NOT NULL REFERENCES files(id),
   printer_id    TEXT NOT NULL REFERENCES printers(id),
+  user_id       TEXT,                         -- 提交者 users.id（网页口令登录为 'family'，历史任务 NULL）
   handler       TEXT NOT NULL DEFAULT 'print',
   params        TEXT NOT NULL DEFAULT '{}',   -- {copies,color_mode,duplex}
   status        TEXT NOT NULL DEFAULT 'queued',
@@ -59,6 +60,16 @@ CREATE TABLE print_jobs (
   last_message  TEXT,
   created_at    TEXT NOT NULL,
   updated_at    TEXT NOT NULL
+);
+
+-- 微信小程序用户（openid 绑定制，见 docs/06 §认证）
+CREATE TABLE users (
+  id            TEXT PRIMARY KEY,             -- u_ab12…
+  openid        TEXT NOT NULL UNIQUE,         -- 微信 openid（仅服务端可见，不下发客户端）
+  name          TEXT NOT NULL DEFAULT '',     -- 展示称呼（首次绑定时可选提供，admin 可改）
+  status        TEXT NOT NULL DEFAULT 'active', -- active | banned
+  created_at    TEXT NOT NULL,
+  last_login_at TEXT
 );
 
 CREATE TABLE job_events (
@@ -74,6 +85,7 @@ CREATE INDEX idx_jobs_status  ON print_jobs(status, created_at);
 CREATE INDEX idx_jobs_list    ON print_jobs(created_at DESC);
 CREATE INDEX idx_files_expiry ON files(expires_at);
 CREATE INDEX idx_events_job   ON job_events(job_id, created_at);
+CREATE INDEX idx_users_openid ON users(openid);
 ```
 
 ## 状态转换规则（api 实现依据）

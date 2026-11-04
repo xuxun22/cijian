@@ -17,6 +17,14 @@
 - 成功后签发 JWT（HS256，`CIJIAN_JWT_SECRET`，7 天）；无刷新令牌，过期重输
 - 私有接口一律校验 `Authorization: Bearer`；401 不区分「token 过期」与「没带」，不泄露信息
 
+### 小程序用户：wx.login + 邀请码首绑（v1.3）
+
+- `wx.login` code → 服务端调 `jscode2session` 换 **openid**（`WX_APPID`/`WX_SECRET` 在 api env；
+  session_key 不存不下发）；openid 与 `users` 表一一对应
+- **邀请码 = 站点口令**，仅首次绑定校验一次；之后每次静默登录，用户零输入
+- 准入控制保留：`users.status=banned` 即拒（admin CLI 管理）；轮换口令不影响已绑定用户
+- 小程序 JWT 与口令登录同构（`sub=u_…`），`requireUser` 无需感知登录方式
+
 ### 地点 Agent：每地点独立 key
 
 - `printers.key_hash` 存 SHA-256，**明文 key 只在发放时显示一次**（admin CLI：`npm run admin -- add-printer`）
@@ -65,8 +73,9 @@
 
 | 变量 | 用途 |
 |---|---|
-| `CIJIAN_PASSPHRASE_HASH` | 登录口令 hash（argon2id） |
+| `CIJIAN_PASSPHRASE_HASH` | 登录口令 hash（argon2id）；同时充当小程序**首次绑定的邀请码** |
 | `CIJIAN_JWT_SECRET` | JWT 签名（≥32 字节随机） |
+| `CIJIAN_WX_APPID` / `CIJIAN_WX_SECRET` | 小程序 jscode2session 凭证（mp.weixin.qq.com → 开发管理 → 开发设置；AppSecret 不入库不入仓） |
 | `CIJIAN_FILE_URL_SECRET` | 签名下载 URL（独立于 JWT，≥32 字节随机） |
 | `CIJIAN_DATA_DIR` | SQLite + files 根目录 |
 

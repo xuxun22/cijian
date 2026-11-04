@@ -1,5 +1,11 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-04] deploy | v1.3：小程序去口令——wx.login 静默登录 + 邀请码首绑 openid
+
+网页仍口令登录（双通道同构 JWT）；邀请码复用站点口令仅首绑校验一次；任务列表
+归属标注 user_name；admin 增 users 管理。需服务器 cijian.env 配
+CIJIAN_WX_APPID/SECRET（未配 wx-login 优雅 503）。契约见 docs/04、05、06。
+
 ## [2026-11-04] gotcha | wx.uploadFile 无法自定义文件名：orig_name 变 tmp_xxx
 
 小程序上传相册/聊天文件后任务显示 tmp_xxx——UploadFileOption 没有 fileName，

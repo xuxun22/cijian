@@ -6,11 +6,12 @@
 
 | 密钥 | 位置 | 用途 |
 |---|---|---|
-| `CIJIAN_PASSPHRASE_HASH` | 服务器 `/opt/cijian-api/app/cijian.env` | 登录口令的 argon2id hash |
+| `CIJIAN_PASSPHRASE_HASH` | 服务器 `/opt/cijian-api/app/cijian.env` | 登录口令的 argon2id hash；**v1.3 起兼作小程序首次绑定邀请码** |
 | `CIJIAN_JWT_SECRET` | 同上 | JWT 签名 |
 | `CIJIAN_FILE_URL_SECRET` | 同上 | 签名下载 URL |
+| `CIJIAN_WX_APPID` / `CIJIAN_WX_SECRET` | 同上（v1.3 新增，未配则 wx-login 503，网页不受影响） | 小程序 jscode2session；AppSecret 取自 mp.weixin.qq.com → 开发管理 → 开发设置 |
 | agent key | Mac mini `~/.config/cijian/agent.env`（600） | p_macmini 的 agent 凭证 |
-| 登录口令（明文） | **只在初始部署时告知过用户，不落任何存储** | 家人登录 |
+| 登录口令（明文） | **只在初始部署时告知过用户，不落任何存储** | 家人登录（网页）+ 分享给新家人的邀请码 |
 
 ## 轮换
 

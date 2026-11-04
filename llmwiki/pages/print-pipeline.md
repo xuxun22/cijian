@@ -80,6 +80,22 @@ lpadmin -d Mi_All_in_One_Inkjet_Printer   # 队列名必须与 agent.env 的 CIJ
 https://api.whereami.cn）；依赖它的只有运维面（服务器 SSH/CI，22 端口对外关闭，另有 5 分钟
 自拉取 timer 兜底）。
 
+## 实战记录（2026-11-04 深夜）：纸已打出但状态永卡「打印中」
+
+**症状**：小程序任务一直「打印中」，纸实际已出；CUPS 里任务卡
+`Status: Waiting for job to complete.`（7 分钟+），agent 等出队等到
+print_timeout 后还会误报「失败」。
+**根因**：IPP 打印机打完即休眠/断连，完成事件没回给 CUPS——数据已全部送达、
+只差完成回报，任务永不出队。消费级 Wi-Fi 打印机常见。
+**修复（agent v0.2.2）**：`ConfirmClock`——该状态**持续**超过
+`CIJIAN_PRINT_CONFIRM_TIMEOUT`（默认 300s；None 探测失败中性、其他状态重置累计）
+→ cancel CUPS 任务并**上报完成**（消息注明"数据已全部送达"）。运行循环与
+`_wait_gone` 恢复循环共用；`job_detail()` 解析 `lpstat -l` 单任务 Status。
+**手工救急**：纸确实已出时 `cancel Mi_All_in_One_Inkjet_Printer-N` → agent 视为
+出队即上报完成。
+**遗留**：agent 的 claim/heartbeat 对 urlopen 超时未捕获会崩（launchd 会拉起，
+今晨 05:43 与今日白天各发生过一次），后续应加网络重试。
+
 ## 排障速查
 
 - 任务卡 `claimed`：agent 死了。等租约过期被 sweeper 重派，或手动
@@ -92,3 +108,5 @@ https://api.whereami.cn）；依赖它的只有运维面（服务器 SSH/CI，22
 - 手机米家能打、Mac 扫不到打印机：mDNS 坏了 → `nc -z <打印机IP> 631` 确认 IP 可达后按 IP
   重建队列（见 2026-11-04 实战记录），别纠结 mDNS 为什么坏
 - **队列里有挂起任务时别删打印机队列**：任务会一起消失且 agent 误报完成
+- 纸已出但任务卡「打印中」：CUPS 卡 `Waiting for job to complete`（设备休眠丢完成
+  事件）→ v0.2.2 起 5 分钟自动按完成处理；救急可手动 `cancel <任务号>`

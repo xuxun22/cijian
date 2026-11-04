@@ -1,5 +1,11 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-04] gotcha | 纸已打出但 CUPS 永不出队：完成事件丢失卡「打印中」
+
+IPP 打印机打完即休眠，完成事件不回 CUPS，任务永卡 Waiting for job to complete，
+agent 等 30 分钟后还会误报失败。v0.2.2 ConfirmClock：持续 300s 即 cancel 并按完成
+上报（数据已全部送达）。见 pages/print-pipeline.md。
+
 ## [2026-11-04] deploy | v1.3：小程序去口令——wx.login 静默登录 + 邀请码首绑 openid
 
 网页仍口令登录（双通道同构 JWT）；邀请码复用站点口令仅首绑校验一次；任务列表

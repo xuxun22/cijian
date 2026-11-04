@@ -1,5 +1,11 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-04] gotcha | wx.uploadFile 无法自定义文件名：orig_name 变 tmp_xxx
+
+小程序上传相册/聊天文件后任务显示 tmp_xxx——UploadFileOption 没有 fileName，
+multipart 文件名只能取临时路径尾段。解法：formData 传 name + 服务端清洗后优先
+采用（api 343e5ae / mp c29b5ce），契约同步 docs/04。见 pages/gotcha-mp-upload-filename.md。
+
 ## [2026-11-04] gotcha | 打印机掉线三连：闪断致取消不触发、删队列误报完成、mDNS 失效按 IP 重建
 
 任务卡「打印中」30 分钟 → CUPS 以 ~100s 周期闪断 ~10s 清零不可达计时，防补打取消

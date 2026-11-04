@@ -48,13 +48,16 @@ JWT：HS256，有效期 7 天，payload `{ "sub": "family", "iat": …, "exp": �
 ### 上传文件
 
 ```
-POST /api/files                         （multipart/form-data，字段名 file）
+POST /api/files                         （multipart/form-data，字段名 file；可选字段 name=展示用原始文件名）
 → 201 { "file_id": "f_ab12…", "orig_name": "合影.jpg", "mime": "image/jpeg",
        "size": 18321, "expires_at": "2026-10-22T09:00:00Z" }
 → 415 / 413 / 429（登录用户每分钟 ≤10 次）
 ```
 
 服务端校验 magic bytes，不信任扩展名；文件名随机化存储，原名仅入库。
+可选 `name` 字段用于 `wx.uploadFile` 场景（它无法自定义 multipart 文件名，临时路径
+只能是 tmp_xxx）：服务端清洗（路径分隔符换 `_`、去控制字符、限长 120）后优先作为
+`orig_name`；未传则回退 multipart 文件名。存储扩展名始终由 mime 决定，与 name 无关。
 
 ### 打印机列表
 

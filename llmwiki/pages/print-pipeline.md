@@ -50,6 +50,36 @@ queued→claimed→printing→(printing 续租)→done 全部在网页可见。
 **修复**（agent v0.2.0 + api v1.2）：心跳携带硬件状态 → `printers.device_state` →
 前端三态展示；打印等待中不可达超 3 分钟 → 取消 CUPS 任务并报失败（防来电补打）。
 
+## 实战记录（2026-11-04）：打印机掉线三连——取消不触发、删队列误报、mDNS 失效
+
+**症状**：小程序任务停在「打印中」，迟迟不出纸也不报失败（最终会挂满 30 分钟超时）。
+
+**根因 1（防补打取消不触发）**：打印机掉线时 CUPS 以 ~100s 为周期、每次 ~10s 短暂丢失
+"Looking for printer." 消息，`printer_state()` 把这 ~10s 判成健康态 printing；旧逻辑要求
+**连续**不可达 180s，计时器每周期被闪断清零，取消条件永远凑不满。
+**修复（agent v0.2.1）**：`UnreachableClock`——不可达改**累计**计时；健康须**持续 30s** 才重置
+（真恢复）；unknown（探测超时）中性不清零。`handlers/print.py` 等待循环与 `agent.py`
+`_wait_gone` 恢复循环共用同一判定，`poll(state, now)` 支持注入时间做模拟测试。
+
+**根因 2（删队列 → 误报完成）**：排障时手动删除 Mac 的打印机队列，挂起的 CUPS 任务随队列
+一起消失，agent 按「离开 not-completed 队列 = 完成」上报 done——实际一张没打。
+教训：**队列里有任务时别删队列**；「离开队列即完成」的简化在队列被外部改动时会误报。
+
+**根因 3（mDNS 失效但 IP 可达）**：Mac 上「扫描打印机」扫不到（`dns-sd -B _ipps/_ipp` 零结果），
+但 `nc -z 192.168.1.22 631` 通——打印机 IP 层完全可达（ARP MAC 尾巴 `cb:22:aa` 与设备名
+[CB22AA] 对上）。手机米家能打是因为米家用自家发现协议，不吃 mDNS，**不能**据此推断局域网 mDNS
+正常。`tailscale down` 的 A/B 测试排除了 MagicDNS 嫌疑。
+**修复**：按 IP 重建队列绕过 Bonjour，且比 dnssd URI 抗漂移：
+
+```bash
+lpadmin -p Mi_All_in_One_Inkjet_Printer -E -v ipp://192.168.1.22:631/ipp/print -m everywhere
+lpadmin -d Mi_All_in_One_Inkjet_Printer   # 队列名必须与 agent.env 的 CIJIAN_PRINTER_NAME 一致
+```
+
+另：cijian 架构**数据面不依赖 Tailscale**（mp/site/agent → api 全走公网
+https://api.whereami.cn）；依赖它的只有运维面（服务器 SSH/CI，22 端口对外关闭，另有 5 分钟
+自拉取 timer 兜底）。
+
 ## 排障速查
 
 - 任务卡 `claimed`：agent 死了。等租约过期被 sweeper 重派，或手动
@@ -57,3 +87,8 @@ queued→claimed→printing→(printing 续租)→done 全部在网页可见。
 - 任务卡 `queued` 且 attempts≥3：sweeper 10 分钟内会置 failed
 - 打印机显示离线：agent 心跳 30s 一次，60s 无心跳判离线 → 看 `launchctl list | grep cijian`
   与 `~/Library/Logs/cijian-agent.err.log`
+- 任务卡 `printing` 超 ~4 分钟：查 err.log 是否循环刷「打印机不可达」；v0.2.1 起累计 3 分钟
+  （闪断不清零）应自动取消报失败，若仍挂满 30 分钟说明跑的还是旧代码 → 重启 launchd 服务
+- 手机米家能打、Mac 扫不到打印机：mDNS 坏了 → `nc -z <打印机IP> 631` 确认 IP 可达后按 IP
+  重建队列（见 2026-11-04 实战记录），别纠结 mDNS 为什么坏
+- **队列里有挂起任务时别删打印机队列**：任务会一起消失且 agent 误报完成

@@ -1,5 +1,10 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-04] gotcha | 小程序真机「连不上服务器」：域名未备案被微信域名校验拦截
+
+真机输口令报连不上服务器，本地工具正常 → urlCheck:false 掩盖问题，whereami.cn
+未 ICP 备案加不进白名单，请求根本没到服务器。见 pages/gotcha-mp-domain-check.md。
+
 ## [2026-10-24] gotcha | CORS 来源不匹配：Vercel 主域是 www
 
 打印工作台登录全被 CORS 拦截 → 根因是 Vercel 把 www 设为主域，前端 Origin 为

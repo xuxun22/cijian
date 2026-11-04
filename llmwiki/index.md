@@ -18,6 +18,7 @@
 - [gotcha-sslip-tls](pages/gotcha-sslip-tls.md) — DNS 未配时用 sslip.io 拿即时 TLS；正式域名的接线清单
 - [gotcha-tailscale-ssh-check-mode](pages/gotcha-tailscale-ssh-check-mode.md) — Tailscale 默认 SSH 策略 check 模式，CI runner 无人值守 SSH 永久挂起
 - [gotcha-cors-www-origin](pages/gotcha-cors-www-origin.md) — Vercel 主域是 www，CORS 白名单只写裸域导致前端全被拦
+- [gotcha-mp-domain-check](pages/gotcha-mp-domain-check.md) — 小程序真机「连不上服务器」= 域名未备案被微信拦截；urlCheck:false 本地永远复现不了
 
 ## howto 补充
 

@@ -4,6 +4,7 @@
 
 真机输口令报连不上服务器，本地工具正常 → urlCheck:false 掩盖问题，whereami.cn
 未 ICP 备案加不进白名单，请求根本没到服务器。见 pages/gotcha-mp-domain-check.md。
+（同日更正：实际白名单配好即解决，直接根因是白名单未配；request/uploadFile 是两个独立列表。）
 
 ## [2026-10-24] gotcha | CORS 来源不匹配：Vercel 主域是 www
 

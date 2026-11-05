@@ -1,5 +1,13 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-05] experienced | M-C2：checkin 投递即打卡 agent 管线落地（v0.3.0）
+
+能力线程扫描 AirDrop 投递 → ffprobe → whisper.cpp 分类 → 上报 → 归档/暂存 → 预览转码上云 →
+sync 差量收敛。真机 E2E 全过（朗读音频/视频→阅读、器乐→二胡、改派/补字段两段式改名、Range 播放）。
+两个关键坑：① whisper.cpp 1.9 的 `-oj` 没有 no_speech_prob（曾默认 1.0 → 全判器乐），
+改 cjk 计数主判据；② 模型不完整时 SIGABRT 必须当「分类失败」而非「无人声」。
+模型走 hf-mirror.com（HF 直连超时）。见 pages/checkin-pipeline.md。
+
 ## [2026-11-04] gotcha | 纸已打出但 CUPS 永不出队：完成事件丢失卡「打印中」
 
 IPP 打印机打完即休眠，完成事件不回 CUPS，任务永卡 Waiting for job to complete，

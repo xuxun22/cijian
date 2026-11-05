@@ -221,11 +221,12 @@ POST /api/agents/checkin/media/:id/content      （请求体 = 预览片字节�
 GET /api/agents/checkin/projects                ← 分类用项目清单（agent 缓存，每轮刷新）
 → 200 { "projects": [ { "id", "name", "media_type", "classifier_hint", "active" } ] }
 
-GET /api/agents/checkin/sync                    ← agent 每轮同步：全部 matched 媒体的
-→ 200 { "media": [ { "media_id": "cm_…",       期望归档名 / 已确认名 / 预览状态，
-      "archive_name": "2026-11-05_二胡_良宵x5.mp4",   agent 自行差量：
+GET /api/agents/checkin/sync                    ← agent 每轮同步：matched（及待指派）媒体
+→ 200 { "media": [ { "media_id": "cm_…",       的期望归档名 / 已确认名 / 预览状态，
+      "archive_name": "…| null",                 agent 自行差量：
       "current_archive_name": "…| null",          · current ≠ 期望 → 执行重命名
-      "preview_status": "none|ready|…" } ] }      · preview_status = none → 转码补传
+      "preview_status": "none|ready|…",           · preview_status = none → 转码补传
+      "type": "video", "date": "2026-11-05" } ] } ← 待指派仅补预览（null 归档名）；date 供按月归档
 
 POST /api/agents/checkin/renames/:media_id/done
 { "archive_name": "2026-11-05_二胡_良宵x5.mp4", "archive_path": "/Users/xx/cijian-archive/2026-11/…" }

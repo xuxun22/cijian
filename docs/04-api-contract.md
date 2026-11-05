@@ -218,8 +218,14 @@ POST /api/agents/checkin/media/:id/content      （请求体 = 预览片字节�
 → 202 { "preview_status": "ready" }             ← preview_expires_at = now + 7 天
 → 413 too_large / 415 unsupported_media_type / 503 unavailable（磁盘水位）
 
-GET /api/agents/checkin/renames                 ← 补字段等触发的归档重命名差量
-→ 200 { "renames": [ { "media_id": "cm_…", "archive_name": "2026-11-05_二胡_良宵x5.mp4" } ] }
+GET /api/agents/checkin/projects                ← 分类用项目清单（agent 缓存，每轮刷新）
+→ 200 { "projects": [ { "id", "name", "media_type", "classifier_hint", "active" } ] }
+
+GET /api/agents/checkin/sync                    ← agent 每轮同步：全部 matched 媒体的
+→ 200 { "media": [ { "media_id": "cm_…",       期望归档名 / 已确认名 / 预览状态，
+      "archive_name": "2026-11-05_二胡_良宵x5.mp4",   agent 自行差量：
+      "current_archive_name": "…| null",          · current ≠ 期望 → 执行重命名
+      "preview_status": "none|ready|…" } ] }      · preview_status = none → 转码补传
 
 POST /api/agents/checkin/renames/:media_id/done
 { "archive_name": "2026-11-05_二胡_良宵x5.mp4", "archive_path": "/Users/xx/cijian-archive/2026-11/…" }
@@ -319,10 +325,10 @@ token = base64url(`media_id.exp`) + HMAC-SHA256（同 `FILE_URL_SECRET`），有
 ## v1.4 变更记录（2026-11-05 · 每日打卡工具）
 
 - 新增站点侧打卡接口：projects CRUD、today、media assign/dismiss/url、records PATCH/GET、stats（JWT）
-- 新增 agent 侧打卡接口：媒体上报（含 AI 分类结果与指派规则）、预览片字节上传、renames 差量拉取/确认（X-Agent-Key）
+- 新增 agent 侧打卡接口：媒体上报（含 AI 分类结果与指派规则）、预览片字节上传、projects 清单、sync 差量同步、重命名确认（X-Agent-Key）
 - 新增 `GET /media/:token` 预览片播放（HMAC 签名、12h、支持 Range）
 - 数据模型新增 `checkin_projects` / `checkin_records` / `checkin_media`（见 05 §打卡）；`data/media/` 预览片保留 7 天，sweeper 增两项清理
-- 设计全文见 docs/10-checkin-plan.md
+- 设计全文见 docs/10-checkin-plan.md；M-C2 实现时细化：agent 分类需项目清单（`GET /api/agents/checkin/projects`），renames 端点定稿为 `GET /api/agents/checkin/sync`（返回全部 matched 媒体的期望名/当前名/预览状态，agent 差量执行）
 
 ## v1.2 变更记录（2026-10-24）
 

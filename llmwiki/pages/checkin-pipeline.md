@@ -49,11 +49,13 @@
 - **全判成人声**：真实朗读片段 cjk 通常 60~150；若器乐被幻觉出长句，往 `HALLUCINATION_PATTERNS` 加词
 - 分类/上传不动作 → `CIJIAN_HANDLERS` 是否含 checkin；模型路径是否存在；`launchctl` 重启后看
   `~/Library/Logs/cijian-agent.*.log`
-- 文件滞留在 inbox → 是否 <60s 静置或正在拷贝（两轮稳定）；解析失败/过短会移入
-  `holding/rejected/`（**从不删用户文件**）
+- 文件滞留在 inbox → 是否 <60s 静置或正在拷贝（两轮稳定）；解析失败/过短的媒体
+  **原地保留**并按签名记忆跳过（不搬动家人的其他文件），只有明确属于打卡的才 move
+- web 端视图切换依赖 `[hidden]`：global.css 已加 `[hidden]{display:none!important}`
+  （此前 `.print-login{display:grid}` 会盖掉 hidden，属打印页潜在 bug）
 
 ## 里程碑状态
 
 M-C1 ✅（2026-11-05，13 项集成测试，已上线）→ M-C2 ✅（2026-11-05，真机 E2E：朗读音频/视频→阅读、
-器乐→二胡；改派重命名、补字段两段式命名、预览上传、Range 播放、幂等复跑全过）→ M-C3 site →
+器乐→二胡；改派重命名、补字段两段式命名、预览上传、Range 播放、幂等复跑全过）→ M-C3 ✅（2026-11-05，`/tools/checkin`：今日完成/待认领/预览播放/补字段/改派/项目管理，已随站点发布）→
 M-C4 mp → M-C5 试运行一周

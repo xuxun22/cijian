@@ -1,5 +1,12 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-05] experienced | M-C3：练习打卡网页端上线（/tools/checkin）
+
+今日完成情况 / 待认领投递（预览→挂项目）/ 补字段 / 改派 / 项目管理（新建/编辑/启停）全在
+一个纯客户端页；口令与打印工作台共用 localStorage JWT；签名 URL 直接喂 `<video>/<audio>`。
+站点由 Vercel 自动发布（GitHub Actions 只做 build 校验）。另修 `[hidden]` 优先级问题。
+见 pages/checkin-pipeline.md。
+
 ## [2026-11-05] experienced | M-C2：checkin 投递即打卡 agent 管线落地（v0.3.0）
 
 能力线程扫描 AirDrop 投递 → ffprobe → whisper.cpp 分类 → 上报 → 归档/暂存 → 预览转码上云 →

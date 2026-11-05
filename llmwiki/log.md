@@ -96,3 +96,5 @@ Docker 29 + Compose 2.40；API 走 127.0.0.1:8787，公网入口挂 ACLI 共享 
 ## [2026-10-21] decision | better-sqlite3 → node:sqlite
 
 见 [gotcha-node-sqlite](pages/gotcha-node-sqlite.md) 与 ADR-002 修订。
+
+## [2026-11-05] overview | v1.4 每日打卡 M-C1 上线：投递即打卡引擎（api 侧全量端点+13 测试）

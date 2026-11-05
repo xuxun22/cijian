@@ -126,7 +126,105 @@ GET /api/print-jobs/:id
       { "state": "printing","message": null,              "source": "agent:p_laowu","created_at": "…" } ] }
 ```
 
+### 打卡（每日练习，v1.4）
+
+> 设计背景见 docs/10-checkin-plan.md。所有「当日」按 Asia/Shanghai；记录日期以 agent 上报的当地日期为准。
+
+```
+GET /api/checkin/projects
+→ 200 { "projects": [ { "id": "cp_ab12…", "name": "每日阅读",
+      "media_type": "any",                 // video|audio|any（偏好提示，指派兜底规则用）
+      "days_of_week": [1,2,3,4,5,6,7],     // 应打日（周一=1…周日=7），仅统计分母/高亮
+      "fields_schema": [ {"key":"book","label":"书名","type":"text","required":true},
+                         {"key":"pages","label":"页码","type":"text"} ],
+      "archive_template": "{date}_{project}_{orig}",
+      "classifier_hint": "朗读中文故事，人声",
+      "active": true, "sort": 0 } ] }
+
+POST /api/checkin/projects
+{ "name": "二胡练习", "media_type": "video", "days_of_week": [1,3,5],
+  "fields_schema": [...], "classifier_hint": "二胡演奏，民乐，几乎无人声" }
+→ 201 { "project": { … } }        ← name 必填，其余可选
+
+PATCH /api/checkin/projects/:id
+{ "name"?: …, "media_type"?: …, "days_of_week"?: …, "fields_schema"?: …,
+  "archive_template"?: …, "classifier_hint"?: …, "active"?: bool, "sort"?: number }
+→ 200 { "project": { … } }
+```
+
+```
+GET /api/checkin/today
+→ 200 { "date": "2026-11-05",
+  "items": [ { "project": {…同上…}, "should": true,          // 今天是否应打日
+      "status": "none" | "done",                             // done=当日有 matched 媒体
+      "record": null | { "id": "cr_…", "fields": {…},
+        "media": [ { "id": "cm_…", "type": "video", "duration_seconds": 1250.3,
+                     "preview_status": "ready",               // none|pending|ready|failed|expired
+                     "archive_name": "2026-11-05_二胡_良宵x5.mp4",
+                     "created_at": "…" } ] } } ],
+  "pending": [ { "media": {…同上, status:"pending_assign"…}, "classifier": {…} } ] }
+```
+
+```
+POST /api/checkin/media/:id/assign
+{ "project_id": "cp_erhu", "date"?: "2026-11-05" }   // date 缺省=当天；改派时忽略 date，沿用原记录日期
+→ 200 { "media": {…}, "record": {…} }
+← 404 not_found（媒体或项目不存在 / 项目 inactive）
+
+POST /api/checkin/media/:id/dismiss
+→ 200 { "ok": true }                                   // 误投忽略
+
+PATCH /api/checkin/records/:id
+{ "fields"?: {…}, "date"?: "2026-11-04" }              // 补字段/改日期；fields 变更触发归档重命名
+→ 200 { "record": {…} }
+
+GET /api/checkin/records?project_id=cp_erhu&from=2026-11-01&to=2026-11-05
+→ 200 { "records": [ { "id","project_id","date","fields","media":[…], "created_at" } ] }
+
+GET /api/checkin/stats?project_id=cp_erhu&days=30
+→ 200 { "streak": 12, "done_days": 18, "days": 30,
+        "practice_seconds": 45600,                      // Σ duration（展示用）
+        "history": [ {"date":"2026-11-05","status":"done"} , … ] }
+
+GET /api/checkin/media/:id/url                          // 预览片播放地址
+→ 200 { "url": "/media/<token>", "expires_at": "…" }    // token 12h
+→ 409 conflict                                          // preview_status ≠ ready
+```
+
 ## Agent 侧接口（X-Agent-Key）
+
+### 打卡媒体上报（v1.4）
+
+```
+POST /api/agents/checkin/media
+{ "type": "video" | "audio", "orig_name": "IMG_1240.MOV",
+  "duration_seconds": 1250.3, "size": 483211234,
+  "sha256": "…（可空，去重用）", "date": "2026-11-05",
+  "classifier": { "method": "asr", "project_hint": "cp_erhu",
+                  "confidence": 0.92, "evidence": "3段片段均无人声/器乐" } }
+→ 200 { "media_id": "cm_ab12…", "duplicate": false,
+        "assigned": true, "project_id": "cp_erhu", "record_id": "cr_…",
+        "archive_name": "2026-11-05_二胡_IMG_1240.mov" }   ← 指派成功：归档名，agent 即刻重命名
+→ 200 { "media_id": "cm_…", "assigned": false }            ← 进待指派，agent 移入 holding
+```
+
+指派规则（优先级）：① classifier.project_hint 为 active 项目且 confidence≥0.6 → ② 当天恰有一个
+无记录的 active 项目且 media_type 兼容 → ③ 待指派。sha256 与近 7 天内已有媒体重复 → 返回已有
+media 且 `duplicate: true`（agent 不再处理）。
+
+```
+POST /api/agents/checkin/media/:id/content      （请求体 = 预览片字节，≤120MB；
+                                                Content-Type: video/mp4 | audio/mp4）
+→ 202 { "preview_status": "ready" }             ← preview_expires_at = now + 7 天
+→ 413 too_large / 415 unsupported_media_type / 503 unavailable（磁盘水位）
+
+GET /api/agents/checkin/renames                 ← 补字段等触发的归档重命名差量
+→ 200 { "renames": [ { "media_id": "cm_…", "archive_name": "2026-11-05_二胡_良宵x5.mp4" } ] }
+
+POST /api/agents/checkin/renames/:media_id/done
+{ "archive_name": "2026-11-05_二胡_良宵x5.mp4", "archive_path": "/Users/xx/cijian-archive/2026-11/…" }
+→ 200 { "ok": true }                            ← 确认后的名字/路径入库（界面可显示归档位置）
+```
 
 ### 心跳（30 秒一次）
 
@@ -203,9 +301,28 @@ GET /files/:token
 
 token = base64url(`file_id.job_id.printer_id.exp`) + HMAC-SHA256 签名，密钥为 `FILE_URL_SECRET`（env）。
 
+### 媒体播放（v1.4）
+
+```
+GET /media/:token                              （无认证头——播放器组件发不了 header）
+→ 200/206 <预览片字节>                          ← 支持 Range（seek/拖进度条）
+→ 403 forbidden    ← 签名无效
+→ 410 gone         ← 预览片已过期清理（保留 7 天）
+```
+
+token = base64url(`media_id.exp`) + HMAC-SHA256（同 `FILE_URL_SECRET`），有效期 12h，绑定单个 media。
+
 ## 变更流程
 
 接口不兼容变更：先在本文档加「v1.x 变更记录」小节，三仓同步实现后再合入；家庭规模不引入 URL 版本号。
+
+## v1.4 变更记录（2026-11-05 · 每日打卡工具）
+
+- 新增站点侧打卡接口：projects CRUD、today、media assign/dismiss/url、records PATCH/GET、stats（JWT）
+- 新增 agent 侧打卡接口：媒体上报（含 AI 分类结果与指派规则）、预览片字节上传、renames 差量拉取/确认（X-Agent-Key）
+- 新增 `GET /media/:token` 预览片播放（HMAC 签名、12h、支持 Range）
+- 数据模型新增 `checkin_projects` / `checkin_records` / `checkin_media`（见 05 §打卡）；`data/media/` 预览片保留 7 天，sweeper 增两项清理
+- 设计全文见 docs/10-checkin-plan.md
 
 ## v1.2 变更记录（2026-10-24）
 

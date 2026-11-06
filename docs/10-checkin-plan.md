@@ -123,20 +123,20 @@ agent: ffmpeg 转码预览 —— 视频 480p/H.264/~450kbps/faststart；音频�
 
 | 仓 | 改动 | 里程碑 |
 |---|---|---|
-| cijian-api | 三张新表（幂等迁移）+ 站点侧 9 个端点 + agent 侧 4 个 + /media/:token(Range) + sweeper 两项清理 + vitest | M-C1 |
-| cijian-agent | checkin 守护线程（扫描/ffprobe/whisper 分类/两段命名/预览转码上传/rename 轮询）+ 配置项 + install.sh；Mac mini 装 ffmpeg/whisper-cpp | M-C2 |
-| cijian-site | 工具箱卡片 + `/tools/checkin`：状态板/待指派/补字段/统计/播放器 | M-C3 |
-| cijian-mp | `pages/checkin` 四件套 + app.json + api.ts 扩展（wx.video 播放） | M-C4 |
+| cijian-api | 三张新表（幂等迁移）+ 站点侧 9 个端点 + agent 侧 4 个 + /media/:token(Range) + sweeper 两项清理 + vitest | M-C1 ✅ |
+| cijian-agent | checkin 守护线程（扫描/ffprobe/whisper 分类/两段命名/预览转码上传/rename 轮询）+ 配置项 + install.sh；Mac mini 装 ffmpeg/whisper-cpp | M-C2 ✅ |
+| cijian-site | 工具箱卡片 + `/tools/checkin`：状态板/待指派/补字段/统计/播放器 | M-C3 ✅ |
+| cijian-mp | `pages/checkin`（今日/待认领/播放/字段/改派）+ `pages/checkin/projects`（项目管理）+ app.json tabBar + api.ts 扩展（PATCH/wx.video 播放） | M-C4 ✅ |
 | cijian（本仓） | 本计划 + 04/05 增补 + research 归档 | ✅ |
 
 ## 6. 里程碑
 
 | # | 内容 | 验收 |
 |---|---|---|
-| M-C1 | api 全部端点 + 测试 | vitest 全绿；curl 模拟 agent 上报 → 指派 → 记录生成 → 预览上传 → 签名 URL 可播（Range 生效） |
-| M-C2 | agent 管线 | 真机：录音投 Downloads → 归档命名正确 → 预览上云；whisper 分类准确（阅读/二胡各试 3 次） |
-| M-C3 | 网页 | 未登录不可见；状态板/待指派/补字段/播放/统计可用 |
-| M-C4 | 小程序 | 同上网页口径；真机播放 OK；CI 自动传体验版 |
+| M-C1 ✅ | api 全部端点 + 测试 | vitest 全绿；curl 模拟 agent 上报 → 指派 → 记录生成 → 预览上传 → 签名 URL 可播（Range 生效） |
+| M-C2 ✅ | agent 管线 | 真机：录音投 Downloads → 归档命名正确 → 预览上云；whisper 分类准确（阅读/二胡各试 3 次） |
+| M-C3 ✅ | 网页 | 未登录不可见；状态板/待指派/补字段/播放/统计可用 |
+| M-C4 ✅ | 小程序 | 同上网页口径 + 项目管理页；CI 类型检查；播放需开发者工具/真机人工验一次（CI 不自动传体验版） |
 | M-C5 | 试运行一周 | 全家真实使用一周；统计待指派率（目标 <10%）；决定是否需要「无媒体手动补卡」 |
 
 ## 7. 决策记录（2026-11-05 确认）

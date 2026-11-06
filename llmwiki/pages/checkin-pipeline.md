@@ -25,7 +25,7 @@
 - 归档名按 `_` 分段渲染：未填字段的段整体剔除（ingest = `date_project_orig`，补字段后自动出现
   `piecexcount` 段并由 sync 触发改名）——不会出现字面 `{piece}`
 
-## agent 侧（v0.3.0，M-C2）
+## agent 侧（v0.3.1，M-C2）
 
 - 能力线程（非 claim）：`CIJIAN_HANDLERS=print,checkin`；registry 里 `BACKGROUND={"checkin"}`
 - 依赖：ffmpeg/ffprobe（brew）、whisper-cli（brew whisper-cpp）、模型
@@ -38,6 +38,12 @@
   中间带参考 no_speech_prob）→ 按项目 `classifier_hint` 关键词唯一匹配（`无人声|器乐|音乐|演奏` vs
   `人声|朗读|说话|背诵|跟读`），置信度 0.9；匹配不唯一/转写失败 → 放弃分类交服务端规则
 - 预览片：视频 480p/450kbps（超长自动降码率保证 ≤110MB）、音频 AAC 96k，指派人/待指派都上传
+- **launchd 环境没有 Homebrew PATH**：plist 的 `EnvironmentVariables` 已加 PATH，代码里
+  `_tool()` 也会按 `/opt/homebrew/bin`、`/usr/local/bin` 兜底解析；启动日志直接打 ffmpeg/whisper 路径
+- **水位线** `~/.local/share/cijian-agent/checkin/state.json`（last_seen）：首次启用不吞 Downloads 里
+  的历史文件（早于启用水位线的首见文件原地跳过），停机期间的新投递重启后仍能补处理
+- 每轮各阶段（projects/scan/sync）独立 try，网络抖动或单文件异常不会阻断整轮；
+  `iterdir` 在 macOS 上偶发 `EINTR`，`_list_inbox()` 重试 3 次
 
 ## 排障入口
 
@@ -53,9 +59,28 @@
   **原地保留**并按签名记忆跳过（不搬动家人的其他文件），只有明确属于打卡的才 move
 - web 端视图切换依赖 `[hidden]`：global.css 已加 `[hidden]{display:none!important}`
   （此前 `.print-login{display:grid}` 会盖掉 hidden，属打印页潜在 bug）
+- 日志里 `checkin 一轮异常：[Errno 4] Interrupted system call: '…/Downloads'` → 旧版扫描阶段被信号打断
+  会中断整轮（连 sync 都跳过）；v0.3.1 已改为各阶段容错 + EINTR 重试
+- launchd 读 `~/Downloads` 的 TCC 权限已验证（用临时 LaunchAgent 跑同款 python：listdir/read 均 ok，
+  ffmpeg/whisper-cli rc=0），排障时可复用这一招，不必投真媒体
+
+## 小程序侧（M-C4，2026-11-06）
+
+- `pages/checkin/checkin`：今日项目卡（已打卡/待打卡/休息日 + 14 天圆点 + 连续天数）、待认领
+  （指派/忽略）、媒体行点播、字段编辑保存、改派；30s 自动刷新（播放中/字段 dirty 时跳过）、下拉刷新
+- `pages/checkin/projects`：项目 CRUD（名称/内容类型/AI 提示/归档模板/练习日/启用/字段）
+- `app.json` 加 tabBar：**打卡 / 打印**，`pages[0]` 变为 checkin（启动页变了）
+- `utils/api.ts`：`rawRequest` 支持 PATCH；微信 typings 的 method 枚举没有 PATCH，需
+  `as unknown as WechatMiniprogram.RequestOption['method']`；打卡接口按 `docs/04 §v1.4`
+- 播放：视频用 `<video>` 浮层；音频用 `wx.createInnerAudioContext()`；`preview_status != ready`
+  时点播放给「转码中」提示（api 返回 409）。签名 URL 走 `<video>`/音频组件，不需要配域名白名单
+  （只有 request/uploadFile/downloadFile/connectSocket 需要）
+- 登录与打印页共用 `wxLogin` 静默登录（首次绑邀请码）
 
 ## 里程碑状态
 
 M-C1 ✅（2026-11-05，13 项集成测试，已上线）→ M-C2 ✅（2026-11-05，真机 E2E：朗读音频/视频→阅读、
 器乐→二胡；改派重命名、补字段两段式命名、预览上传、Range 播放、幂等复跑全过）→ M-C3 ✅（2026-11-05，`/tools/checkin`：今日完成/待认领/预览播放/补字段/改派/项目管理，已随站点发布）→
-M-C4 mp → M-C5 试运行一周
+M-C4 ✅（2026-11-06，mp 打卡页+项目管理页+tabBar，`npm run typecheck` 绿；播放需开发者工具/真机人工点一次）→
+M-C5 试运行一周（生产 agent 已于 2026-11-06 开 checkin：`CIJIAN_HANDLERS=print,checkin`，
+项目「每日阅读」「二胡练习」已建好）

@@ -162,7 +162,8 @@ GET /api/checkin/today
                      "preview_status": "ready",               // none|pending|ready|failed|expired
                      "archive_name": "2026-11-05_二胡_良宵x5.mp4",
                      "created_at": "…" } ] } } ],
-  "pending": [ { "media": {…同上, status:"pending_assign"…}, "classifier": {…} } ] }
+  "pending": [ {…同上媒体对象, "status": "pending_assign",
+                "classifier": {"method": "asr", "evidence": "…"} | null } ] }
 ```
 
 ```

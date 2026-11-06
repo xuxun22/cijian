@@ -6,7 +6,7 @@
 
 工具箱第二件工具：**投递即打卡**——手机录视频/录音 AirDrop 到 Mac mini，agent 扫描
 → ffprobe → whisper.cpp 分类 → 上报 api → 自动指派项目（AI > 唯一未完成 > 待指派）→
-记录自动生成 → 归档两段式命名 → 预览片上云（480p/450kbps，**云端只留 7 天**）→
+记录自动生成 → 归档两段式命名 → 预览片上云（480p/250kbps，**云端只留 7 天**）→
 签名 URL 播放（HMAC 12h、免 auth 头、支持 Range）。
 
 真相源：`docs/10-checkin-plan.md`（设计+决策记录）、`docs/04` §v1.4、`docs/05` §打卡。
@@ -37,7 +37,10 @@
 - 分类：抽 3×12s → whisper-cli `-oj` → 三段合计中文字符数为主判据（≥40 人声 / ≤15 无人声 /
   中间带参考 no_speech_prob）→ 按项目 `classifier_hint` 关键词唯一匹配（`无人声|器乐|音乐|演奏` vs
   `人声|朗读|说话|背诵|跟读`），置信度 0.9；匹配不唯一/转写失败 → 放弃分类交服务端规则
-- 预览片：视频 480p/450kbps（超长自动降码率保证 ≤110MB）、音频 AAC 96k，指派人/待指派都上传
+- 预览片：视频 480p/250kbps（长视频按 8MB 目标自动降码率，最低 100k）、音频 AAC 64k，指派人/待指派都上传
+- **预览上传是后台线程**（`_preview_queue`），慢网不阻塞扫描/改名；失败指数退避（10 分钟起，最长 6 小时），
+  上传超时 30 分钟。2026-11-06 实测：API 在腾讯云**美国圣克拉拉**，家宽到它 RTT ~350ms、丢包 0~20%，
+  单流上传只有 3~30KB/s —— 11MB 的 450k 预览传不上去，故降到 250k/8MB 目标；根治要迁国内或媒体走国内 CDN
 - **launchd 环境没有 Homebrew PATH**：plist 的 `EnvironmentVariables` 已加 PATH，代码里
   `_tool()` 也会按 `/opt/homebrew/bin`、`/usr/local/bin` 兜底解析；启动日志直接打 ffmpeg/whisper 路径
 - **水位线** `~/.local/share/cijian-agent/checkin/state.json`（last_seen）：首次启用不吞 Downloads 里

@@ -96,7 +96,7 @@
 约束：视频本体在 Mac mini（几百 MB，不过云）；agent 纯出站；`<video>`/`wx.video` 发不了 Authorization 头。
 
 ```
-agent: ffmpeg 转码预览 —— 视频 480p/H.264/~450kbps/faststart；音频转 AAC 96k（或原样 m4a）
+agent: ffmpeg 转码预览 —— 视频 480p/H.264/~250kbps/faststart（长视频按 8MB 上限自动降码率，最低 100k）；音频转 AAC 64k（或原样 m4a）
   → POST /api/agents/checkin/media/:id/content（≤120MB，X-Agent-Key）
   → api 落盘 data/media/<yyyy-mm>/<media_id>.<ext>，preview_status → ready，
     preview_expires_at = now + 7 天
@@ -146,7 +146,7 @@ agent: ffmpeg 转码预览 —— 视频 480p/H.264/~450kbps/faststart；音频�
 | 1 | 功能归属 | cijian 工具集第二件工具，**网页 + 小程序同时可用**，不建独立仓 |
 | 2 | 打卡方式 | **投递即打卡**：所有打卡 = AirDrop 媒体到 agent 机器，自动扫描自动完成；无手动打卡表单 |
 | 3 | 项目指派 | AI 分类（whisper.cpp 本地，默认）> 唯一未完成 > 待指派；永远可一键改派 |
-| 4 | 在线回看 | **必须功能**：预览片上云（480p/450kbps）+ 签名 URL 播放；**云端只留 7 天**，原件 Mac mini 永久 |
+| 4 | 在线回看 | **必须功能**：预览片上云（480p/250kbps，2026-11-06 因跨洋链路从 450k 下调）+ 签名 URL 播放；**云端只留 7 天**，原件 Mac mini 永久 |
 | 5 | 练习时长 | **不设门槛**（min_duration 字段保留不启用），时长仅入统计 |
 | 6 | 提醒 | 暂不做（Phase 2 再议通道） |
 | 7 | 钉钉 | 读搁置（schema 留 `dingtalk_rules` 休眠字段）、自动提交不做 |

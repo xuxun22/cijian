@@ -76,6 +76,10 @@
   时点播放给「转码中」提示（api 返回 409）。签名 URL 走 `<video>`/音频组件，不需要配域名白名单
   （只有 request/uploadFile/downloadFile/connectSocket 需要）
 - 登录与打印页共用 `wxLogin` 静默登录（首次绑邀请码）
+- 发布：CI 的 upload job 已配置 `MP_UPLOAD_PRIVATE_KEY`，push main 自动上传开发版
+  （日志「上传完成：v0.1.0-<sha>」）；「设为体验版」只能在 mp 后台手动点
+- 若真机视频/音频播不了：先确认 mp 后台「downloadFile 合法域名」是否含 `https://api.whereami.cn`
+  （组件本身不强制白名单，但加上无害；request/uploadFile 已有）
 
 ## 里程碑状态
 

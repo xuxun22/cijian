@@ -122,3 +122,10 @@ Docker 29 + Compose 2.40；API 走 127.0.0.1:8787，公网入口挂 ACLI 共享 
 **微信 wx.request 不支持 PATCH**（api 更新端点改为同时接受 POST，小程序字段保存/项目编辑才真机可用）。
 小程序新增打卡页 + 项目管理页 + tabBar 双工具入口，api 客户端支持 PATCH。
 细节见 [checkin-pipeline](pages/checkin-pipeline.md)。
+
+## [2026-11-06] e2e | 首条真实打卡视频：分类/归档正确，预览上传踩到 3 个坑
+
+175s 二胡视频 → whisper 认出二胡练习 → 建档 → 归档 184MB 原件；预览 6.7MB 上传先后失败两次，
+根因：①预览同步上传阻塞扫描 ②Node 默认 requestTimeout=300s 切断慢上传 ③agent claim 遇 SSL 超时崩进程。
+均已修（后台线程+指数退避 / requestTimeout 1h / 网络异常只告警），最终 preview=ready。
+API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s —— 在线播放体验的长期瓶颈。

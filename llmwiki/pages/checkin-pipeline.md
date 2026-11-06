@@ -39,8 +39,13 @@
   `人声|朗读|说话|背诵|跟读`），置信度 0.9；匹配不唯一/转写失败 → 放弃分类交服务端规则
 - 预览片：视频 480p/250kbps（长视频按 8MB 目标自动降码率，最低 100k）、音频 AAC 64k，指派人/待指派都上传
 - **预览上传是后台线程**（`_preview_queue`），慢网不阻塞扫描/改名；失败指数退避（10 分钟起，最长 6 小时），
-  上传超时 30 分钟。2026-11-06 实测：API 在腾讯云**美国圣克拉拉**，家宽到它 RTT ~350ms、丢包 0~20%，
-  单流上传只有 3~30KB/s —— 11MB 的 450k 预览传不上去，故降到 250k/8MB 目标；根治要迁国内或媒体走国内 CDN
+  上传超时 1 小时。2026-11-06 实测：API 在腾讯云**美国圣克拉拉**，家宽到它 RTT ~350ms、丢包 0~20%，
+  单流上传只有 3~30KB/s —— 11MB 的 450k 预览传不上去，故降到 250k/8MB 目标（175s 视频 ≈ 6.7MB，
+  实测 14 分钟传完，preview=ready）；根治要迁国内或媒体走国内 CDN
+- **上传卡在 ~5 分钟必失败** → 不是链路断，是 **Node 默认 `requestTimeout=300s`** 把慢速请求体切断
+  （日志表现 `EOF occurred in violation of protocol` / `The write operation timed out`）。
+  修复：`src/index.ts` 里 `(server as unknown as http.Server).requestTimeout = 60*60*1000`
+  （`@hono/node-server` 的 `ServerType` 联合类型没有这个属性，需 cast）
 - **launchd 环境没有 Homebrew PATH**：plist 的 `EnvironmentVariables` 已加 PATH，代码里
   `_tool()` 也会按 `/opt/homebrew/bin`、`/usr/local/bin` 兜底解析；启动日志直接打 ffmpeg/whisper 路径
 - **水位线** `~/.local/share/cijian-agent/checkin/state.json`（last_seen）：首次启用不吞 Downloads 里
@@ -91,4 +96,7 @@ M-C1 ✅（2026-11-05，13 项集成测试，已上线）→ M-C2 ✅（2026-11-
 器乐→二胡；改派重命名、补字段两段式命名、预览上传、Range 播放、幂等复跑全过）→ M-C3 ✅（2026-11-05，`/tools/checkin`：今日完成/待认领/预览播放/补字段/改派/项目管理，已随站点发布）→
 M-C4 ✅（2026-11-06，mp 打卡页+项目管理页+tabBar，`npm run typecheck` 绿；播放需开发者工具/真机人工点一次）→
 M-C5 试运行一周（生产 agent 已于 2026-11-06 开 checkin：`CIJIAN_HANDLERS=print,checkin`，
-项目「每日阅读」「二胡练习」已建好）
+项目「每日阅读」「二胡练习」已建好）。**首次真实投递（2026-11-06 22:55，175s 二胡视频）**：
+whisper 分类正确 → 记录建档 → 归档 `2026-11-06_二胡练习_IMG_4985.mov`（原件 184MB 永久保留）→
+预览 6.7MB 14 分钟上云 ready。踩坑与修复：预览同步上传阻塞扫描（改后台线程+退避）、
+Node 300s requestTimeout 切断慢上传（放宽到 1 小时）、agent claim 遇 SSL 超时崩进程（改为只告警）

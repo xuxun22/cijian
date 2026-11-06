@@ -146,7 +146,7 @@ POST /api/checkin/projects
   "fields_schema": [...], "classifier_hint": "二胡演奏，民乐，几乎无人声" }
 → 201 { "project": { … } }        ← name 必填，其余可选
 
-PATCH /api/checkin/projects/:id
+PATCH /api/checkin/projects/:id                          // 同上，小程序走 POST
 { "name"?: …, "media_type"?: …, "days_of_week"?: …, "fields_schema"?: …,
   "archive_template"?: …, "classifier_hint"?: …, "active"?: bool, "sort"?: number }
 → 200 { "project": { … } }
@@ -175,7 +175,7 @@ POST /api/checkin/media/:id/assign
 POST /api/checkin/media/:id/dismiss
 → 200 { "ok": true }                                   // 误投忽略
 
-PATCH /api/checkin/records/:id
+PATCH /api/checkin/records/:id                          // 小程序走 POST（wx.request 不支持 PATCH）
 { "fields"?: {…}, "date"?: "2026-11-04" }              // 补字段/改日期；fields 变更触发归档重命名
 → 200 { "record": {…} }
 

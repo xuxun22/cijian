@@ -70,8 +70,9 @@
   （指派/忽略）、媒体行点播、字段编辑保存、改派；30s 自动刷新（播放中/字段 dirty 时跳过）、下拉刷新
 - `pages/checkin/projects`：项目 CRUD（名称/内容类型/AI 提示/归档模板/练习日/启用/字段）
 - `app.json` 加 tabBar：**打卡 / 打印**，`pages[0]` 变为 checkin（启动页变了）
-- `utils/api.ts`：`rawRequest` 支持 PATCH；微信 typings 的 method 枚举没有 PATCH，需
-  `as unknown as WechatMiniprogram.RequestOption['method']`；打卡接口按 `docs/04 §v1.4`
+- **微信 wx.request 不支持 PATCH**（method 枚举只有 GET/POST/PUT/DELETE/…；社区一致结论）。
+  api 的两个更新端点用 `app.on(['PATCH','POST'], …)` 同时挂两种方法：网页用 PATCH，小程序用 POST。
+  （此前试过 `as unknown as RequestOption['method']` 透传，真机会失败，已回退）
 - 播放：视频用 `<video>` 浮层；音频用 `wx.createInnerAudioContext()`；`preview_status != ready`
   时点播放给「转码中」提示（api 返回 409）。签名 URL 走 `<video>`/音频组件，不需要配域名白名单
   （只有 request/uploadFile/downloadFile/connectSocket 需要）

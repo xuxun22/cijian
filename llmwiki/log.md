@@ -117,7 +117,8 @@ Docker 29 + Compose 2.40；API 走 127.0.0.1:8787，公网入口挂 ACLI 共享 
 ## [2026-11-06] feat | 打卡上生产 + 小程序 M-C4
 
 生产 agent 开启 checkin 能力（env 加 `CIJIAN_HANDLERS=print,checkin` + checkin 配置，launchd 重启）。
-过程中修了 3 个真机问题：launchd 无 Homebrew PATH（plist + 代码双兜底）、`iterdir` EINTR 打断整轮
-（各阶段独立容错 + 重试）、首次启用会吞历史 Downloads（加水位线 `checkin/state.json`）。
+过程中修了 4 个真机问题：launchd 无 Homebrew PATH（plist + 代码双兜底）、`iterdir` EINTR 打断整轮
+（各阶段独立容错 + 重试）、首次启用会吞历史 Downloads（加水位线 `checkin/state.json`）、
+**微信 wx.request 不支持 PATCH**（api 更新端点改为同时接受 POST，小程序字段保存/项目编辑才真机可用）。
 小程序新增打卡页 + 项目管理页 + tabBar 双工具入口，api 客户端支持 PATCH。
 细节见 [checkin-pipeline](pages/checkin-pipeline.md)。

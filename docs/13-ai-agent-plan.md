@@ -502,7 +502,7 @@ CIJIAN_AI_WIKI_DEPLOY_KEY=~/.config/cijian/wiki_deploy_key   # SSH deploy key，
 
 | # | 内容 | 交付 | 验收 | 估算 |
 |---|---|---|---|---|
-| **M-B0** | Spike | opencode JSON 契约 + analyze 实测延迟、专用 agent profile 权限验证、长轮询压测、GitHub 私有仓/deploy key 走通、沙箱渗透自查 | 一页 spike 结论（含延迟基线）+ 拓扑定稿 | 1–2d |
+| **M-B0** ✅ | Spike | opencode JSON 契约 + analyze 实测延迟、专用 agent profile 权限验证、长轮询压测、GitHub 私有仓/deploy key 走通、沙箱渗透自查 | **[spike 报告](./research/mb0-spike-result.md)**：文字 6.4~8.5s / 图片 10.6s（好于预估）；profile 权限生效；视觉+图片规则正确；私有仓+deploy key 全链路通，wiki 骨架已种子 | 1–2d（2026-11-11 完成） |
 | **M-B1** | API 任务平面 | ai_tasks/events/artifacts + shine_views、agent/site 端点、租约/长轮询/链式/串行化、视图防回退、sweeper、vitest | 全绿；fake agent 走完 claim→heartbeat→result→链式入队；**双 agent 抢占与 wiki 串行化用例通过** | 3d |
 | **M-B2** | Agent worker + opencode runner | ai 线程、opencode runner（轻量 analyze profile + wiki profile）、工作区/守卫、恢复、`--ai-once` | 真机：条目→任务→结果卡全链路 p50 ≤15s（以 M-B0 基线校准） | 3d |
 | **M-B3** | 闪光异步化 | `POST /entries` 202、pending/failed/offline 三态 UI、retry、图片签名 URL 下发 | web+mp 真机可用；agent 断电重启不丢任务 | 2d |

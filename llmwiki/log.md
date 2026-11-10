@@ -129,3 +129,5 @@ Docker 29 + Compose 2.40；API 走 127.0.0.1:8787，公网入口挂 ACLI 共享 
 根因：①预览同步上传阻塞扫描 ②Node 默认 requestTimeout=300s 切断慢上传 ③agent claim 遇 SSL 超时崩进程。
 均已修（后台线程+指数退避 / requestTimeout 1h / 网络异常只告警），最终 preview=ready。
 API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s —— 在线播放体验的长期瓶颈。
+
+## [2026-11-11] howto | opencode runner 集成实测（M-B0 spike：JSON 契约/agents 目录/延迟/deploy key）

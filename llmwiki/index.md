@@ -25,3 +25,4 @@
 ## howto 补充
 
 - CD 双通道：cijian-api 推 main 即部署（Tailscale + SSH），另有服务器 5 分钟自拉取 timer 兜底
+- [opencode-runner](pages/opencode-runner.md) — agent 用 `opencode run` 做 AI 执行器的实测契约：JSON 输出在 `part.text`、`.opencode/agents/`（复数）profile、`--file` 附图、延迟基线、wiki deploy key 流程

@@ -192,6 +192,67 @@ GET /api/checkin/media/:id/url                          // 预览片播放地址
 → 409 conflict                                          // preview_status ≠ ready
 ```
 
+### 看见闪光（v1.5）
+
+> 设计见 docs/12-shine-plan.md（产品/UX）+ docs/13-ai-agent-plan.md（AI 执行与记忆，**本文的权威**）。
+> AI 一律由 agent 任务完成：提交后 `ai_status=pending`，前端轮询；agent 不在线条目照存、任务排队。
+> 三种判断 `kind`：`praise`（值得具体肯定）/ `notice`（描述看见，不评价）/ `listen`（先倾听，不夸）。
+
+```
+POST /api/shine/entries
+{ "child_id"?: "sc_default",                  // 缺省 = 默认孩子
+  "client_id": "0f0c…",                       // 幂等（同 user 重放返回已有）
+  "date"?: "2026-11-11",                      // 缺省 = 上海今天
+  "raw_text"?: "今天数学题遇到一道难题，想了很久，最后自己做出来了。",   // 0~500 字
+  "image_file_id"?: "f_ab12…",                // 先走 POST /api/files（24h TTL）
+  "source": "web" | "mp" }
+→ 202 { "entry": { "id": "sh_…", "ai_status": "pending", … }, "task_id": "at_…" }
+→ 400 bad_request（文字与图片都空 / 文字>500 / date 非法 / 模型看不了图片）
+→ 404 not_found（child 或 image_file 不存在/过期） / 413 / 415 / 429（10/min，60/day）
+
+GET /api/shine/entries?child_id&from&to&tag&q&limit=30&before=…      // 时间线（软删不返回）
+→ 200 { "entries": [ { "id","date","kind","raw_text","highlight","say_this","tags":["思考"],
+        "said_at","feedback","ai_status","wiki_status","created_at" } ], "next": "sh_…|null" }
+
+GET /api/shine/entries/:id
+→ 200 { "entry": { …, "task": { "id": "at_…", "status": "running" } } }   // 前端轮询用
+
+POST /api/shine/entries/:id/retry            // 重新分析（新 dedupe 序号）
+→ 202 { "task_id": "at_…" }
+
+PATCH /api/shine/entries/:id                 // 小程序走 POST（wx.request 无 PATCH）
+{ "say_this"?, "lighter"?, "highlight"?, "tags"?, "date"?, "said"?: bool }
+→ 200 { "entry": { … } }                     // raw_text 不可改；said=true→now，false→null
+
+DELETE /api/shine/entries/:id                // 软删 + 入队 shine.wiki.redact（agent 清记忆引用）
+→ 200 { "ok": true }
+
+POST /api/shine/entries/:id/feedback         // "too_much" | "not_like" | "good"（prompt 迭代数据）
+→ 200 { "ok": true }
+```
+
+```
+GET /api/ai/tasks/:id                        // 前端轮询 AI 任务状态（JWT）
+→ 200 { "task": { "id","type":"shine.analyze","status":"queued|claimed|running|succeeded|failed",
+        "error"?: "…", "created_at","started_at","finished_at" } }
+
+GET /api/shine/growth?child_id=              // 读 agent 发布的 growth 视图（非 wiki 原文）
+→ 200 { "view": { "child_id","period","evidence_count",
+        "dimensions": [ { "key":"thinking","label":"思考与学习策略","summary":"…",
+          "trend":"emerging|repeating|stable|uncertain","confidence":"low|medium|high",
+          "evidence":[ {"entry_id":"sh_…","date":"…","quote":"…"} ],
+          "counter_evidence":[…],"next_observation":"…" } ],
+        "open_questions":[…], "review": "…月度回顾（markdown 摘要）",
+        "ai_note": "…", "commit_count": 42, "updated_at": "…" } }
+→ 200 { "view": null }                       // 尚无视图：前端显示「AI 正在建立成长档案」
+
+POST /api/shine/review   { "period": "2026-11" }        // 入队 shine.review.monthly（5/min）
+→ 202 { "task_id": "at_…" }
+
+GET /api/shine/export?format=md              // 条目导出（wiki 在私有 GitHub 仓，不经 API）
+→ 200 text/markdown（Content-Disposition: attachment）
+```
+
 ## Agent 侧接口（X-Agent-Key）
 
 ### 打卡媒体上报（v1.4）
@@ -234,6 +295,59 @@ POST /api/agents/checkin/renames/:media_id/done
 → 200 { "ok": true }                            ← 确认后的名字/路径入库（界面可显示归档位置）
 ```
 
+### AI 任务平面（v1.5）
+
+> agent 的 `ai` 能力线程专用（docs/13-ai-agent-plan.md §3/§7）。AI 任务与打印任务**不同队列**：
+> 长轮询领取、心跳续租、报果；`shine.wiki.*` / `shine.review.*` 为 `serialized`——同类型全局同时只有一单在跑。
+
+```
+POST /api/agents/ai/tasks/claim
+{ "types": ["shine.analyze", "shine.wiki.ingest"] }   // 按 agent 实际能力上报（无 wiki key 的机器只报 analyze）
+→ 200 { "task": { "id": "at_…", "type": "shine.analyze", "payload": { "entry_id": "sh_…",
+          "child_id": "sc_default", "prompt_version": "shine-analyze-v1" },
+          "lease_expires_at": "…", "attempt": 1 } }
+→ 204                                          // 长轮询挂起 ≤25s 后无任务
+```
+
+```
+POST /api/agents/ai/tasks/:id/heartbeat       // 20s 一次；续租 +60s
+→ 200 { "cancel": false, "lease_expires_at": "…" }   // cancel=true → agent 中止并报 failed
+
+POST /api/agents/ai/tasks/:id/result          // analyze 报果（幂等；重派后旧 agent 上报 → 409）
+{ "result": { "kind": "praise", "highlight": "…", "strength": "…", "growth_note": "…",
+              "say_this": "…", "lighter": "…", "avoid": "…", "tags": ["思考","坚持"],
+              "need_more": "" },
+  "model": "…", "prompt_version": "shine-analyze-v1",
+  "tokens": { "in": 1200, "out": 300 }, "duration_ms": 9500 }
+→ 200 { "ok": true }                           // wiki.ingest 成功由 API 在此事务内自动入队
+
+POST /api/agents/ai/tasks/:id/fail
+{ "error": "opencode exit 124（超时）", "retryable": true }
+→ 200 { "ok": true }                           // attempts<max → 重派；analyze 失败 → 条目 ai_status=failed
+
+GET /api/agents/ai/tasks/:id                   // 崩溃恢复：查任务当前状态/租约
+→ 200 { "task": { … } }
+```
+
+```
+GET /api/agents/ai/entries/:id                 // analyze 的输入（文本 + 图片签名 URL 15min + 口吻上下文）
+→ 200 { "entry": { "id": "sh_…", "raw_text": "…", "date": "2026-11-11", "input_type": "text|image" },
+        "image_url": "/files/<签名token>" | null,
+        "analyze_context": { "tone": "…", "age_band": "6-9岁", "notes": "…" } | null }
+```
+
+```
+PUT /api/agents/ai/views                       // agent 编译后的视图发布（wiki 原文永不来 API）
+{ "child_id": "sc_default", "kind": "growth",  // growth | analyze_context
+  "content": { …渲染契约见 04 §看见闪光 growth… },
+  "commit_count": 42 }                         // git rev-list --count HEAD，单调递增
+→ 200 { "ok": true }
+→ 409 conflict                                 // commit_count ≤ 已存值（旧视图防回退）
+
+POST /api/agents/ai/tasks/:id/artifacts        // 产物（报告/diff/log；无 wiki 全文），30 天 TTL
+（multipart，字段 file）→ 201 { "artifact": { "id": "aa_…", "kind": "report", "size": 2048 } }
+```
+
 ### 心跳（30 秒一次）
 
 ```
@@ -241,13 +355,14 @@ POST /api/agents/heartbeat
 { "handlers": ["print"], "version": "0.2.0",
   "status": "ok",                              // ok | printer-unreachable
   "printer_state": "unreachable",              // 可选：printing|idle|unreachable|paused|unknown
+  "ai_capabilities": { "types": ["shine.analyze"] },   // v1.5：ai 能力线程上报；无则省略
   "detail": { "cups_queue_len": 0,
               "printer_state": "unreachable",
               "printer_message": "Looking for printer." } }
 → 200 { "now": "2026-10-21T08:00:00Z" }
 ```
 
-副作用：刷新对应 printer 的 `last_seen_at` / `handlers` / `device_state` / 能力字段。
+副作用：刷新对应 printer 的 `last_seen_at` / `handlers` / `device_state` / 能力字段 / `ai_capabilities`（v1.5）。
 `printer_state=unreachable`（CUPS "Looking for printer."）表示 **agent 在线但打印机硬件不可达**（断电/离线）——与 agent 掉线是两种不同的故障。
 
 ### 领取任务
@@ -323,6 +438,14 @@ token = base64url(`media_id.exp`) + HMAC-SHA256（同 `FILE_URL_SECRET`），有
 ## 变更流程
 
 接口不兼容变更：先在本文档加「v1.x 变更记录」小节，三仓同步实现后再合入；家庭规模不引入 URL 版本号。
+
+## v1.5 变更记录（2026-11-11 · 看见闪光 + Agent AI 任务平面）
+
+- 新增站点侧「看见闪光」接口：entries 创建（**202 异步**，AI 由 agent 完成）/列表/详情/retry/更新（PATCH+POST）/软删（触发 redact）/feedback、`GET /api/ai/tasks/:id` 轮询、`GET /api/shine/growth`（读 agent 发布的视图）、`POST /api/shine/review`、导出（JWT）
+- 新增 agent 侧 AI 任务平面：claim（**长轮询 ≤25s**）/heartbeat/result/fail/恢复、`GET /api/agents/ai/entries/:id`（分析输入 + 图片签名 URL + analyze_context）、`PUT /api/agents/ai/views`（视图发布，commit_count 防回退）、artifacts 上传（X-Agent-Key）
+- 心跳新增可选 `ai_capabilities`（能力路由：无 wiki deploy key 的机器只报 analyze）
+- 数据模型新增 `shine_children` / `shine_entries` / `ai_tasks` / `ai_task_events` / `ai_artifacts` / `shine_views`；`printers` 增 `ai_capabilities` 列；**不建 wiki 表——API 零 wiki 原文**（ADR-008/009）
+- AI 执行与家庭 Wiki 记忆的设计全文见 docs/13-ai-agent-plan.md；产品/UX 见 docs/12-shine-plan.md
 
 ## v1.4 变更记录（2026-11-05 · 每日打卡工具）
 

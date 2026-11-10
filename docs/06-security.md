@@ -67,7 +67,23 @@
 
 - 不落明文口令 / agent key / JWT；日志中文件只出现 file_id
 - 登录失败记 IP 与次数（限速依据）
-- `job_events` 即操作审计：谁（user/api/agent:xxx）何时把任务改成了什么
+- `job_events` / `ai_task_events` 即操作审计：谁（user/api/agent:xxx）何时把任务改成了什么
+- AI 任务日志只记 `{ok, model, prompt_version, latency_ms, tokens, has_image}`——**不落原文、图片、base64、模型 key**
+
+## 内容边界（v1.5，ADR-008/009）
+
+> api 是公网暴露面。**家庭记忆（wiki 全文/画像/偏好/家庭背景）永不入 api**。
+
+| 内容 | 存放 | 暴露面 |
+|---|---|---|
+| 条目原文（家长输入，非 AI 记忆） | api `shine_entries` | JWT + 限速；已确认接受 |
+| Wiki 全文 | 私有 GitHub 仓 + agent 本地克隆 | **不在 api**；服务器无 GitHub 凭证 |
+| UI 成长页数据 | api `shine_views`（agent 编译后的 `growth`/`analyze_context` 视图） | 只有 agent 侧 PUT（X-Agent-Key）可写，`commit_count` 单调防回退 |
+| 图片 | `/api/files` 24h TTL；识别成功即删 | 同打印文件链路；不长期保存 |
+
+- 删除条目 → 自动入队 `shine.wiki.redact`：agent 从 wiki 移除引用、push、重发视图——记忆增删改全经 agent。
+- agent 沙箱：AI 任务子进程 env 白名单（剔除 `CIJIAN_AGENT_KEY`/口令 hash/JWT secret/deploy key），
+  一次性工作区，`HOME` 指向工作区，OpenCode 专用 profile 禁 bash/webfetch，超时杀进程组（docs/13 §4.3）。
 
 ## 密钥清单（api 环境变量）
 
@@ -78,5 +94,16 @@
 | `CIJIAN_WX_APPID` / `CIJIAN_WX_SECRET` | 小程序 jscode2session 凭证（mp.weixin.qq.com → 开发管理 → 开发设置；AppSecret 不入库不入仓） |
 | `CIJIAN_FILE_URL_SECRET` | 签名下载 URL（独立于 JWT，≥32 字节随机） |
 | `CIJIAN_DATA_DIR` | SQLite + files 根目录 |
+| `CIJIAN_AI_ENABLED` / `CIJIAN_AI_MODE` | v1.5：AI 总开关；`inline` 仅开发/应急（默认 `agent`，不直连模型） |
+
+**api 不持有任何模型 key、GitHub 凭证。**
 
 轮换：三个 secret 均可热换（重启 api 生效）；换 `JWT_SECRET` 会使所有登录态失效——家人重新输一次口令即可。
+
+## 密钥清单（agent 侧，v1.5 新增）
+
+| 凭证 | 存放 | 说明 |
+|---|---|---|
+| `CIJIAN_AGENT_KEY` | `~/.config/cijian/agent.env`（600） | 领 AI 任务/心跳/报果，与打印共用 |
+| wiki deploy key（SSH，仅 `cijian-family-wiki` 写权限） | `~/.config/cijian/wiki_deploy_key`（600） | 只发给允许写记忆的机器（首期 = 家里 Mac mini）；遗失即在 GitHub 撤销 |
+| OpenCode 模型登录 | OpenCode 自管（本机） | agent 不透传给任务子进程 |

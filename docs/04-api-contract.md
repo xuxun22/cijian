@@ -330,10 +330,14 @@ GET /api/agents/ai/tasks/:id                   // 崩溃恢复：查任务当前
 ```
 
 ```
-GET /api/agents/ai/entries/:id                 // analyze 的输入（文本 + 图片签名 URL 15min + 口吻上下文）
+GET /api/agents/ai/entries/:id                 // analyze 的输入（文本 + 图片地址 + 口吻上下文）
 → 200 { "entry": { "id": "sh_…", "raw_text": "…", "date": "2026-11-11", "input_type": "text|image" },
-        "image_url": "/files/<签名token>" | null,
+        "image_file_id": "f_…" | null,
+        "image_url": "/api/agents/ai/files/f_…" | null,   // 用 X-Agent-Key 直接拉字节（agent 已鉴权，无需签名 token）
         "analyze_context": { "tone": "…", "age_band": "6-9岁", "notes": "…" } | null }
+
+GET /api/agents/ai/files/:id                   // 任务图片字节（X-Agent-Key；仅 image/jpeg|png，过期 404）
+→ 200 image/*
 ```
 
 ```

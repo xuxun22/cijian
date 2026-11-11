@@ -506,7 +506,7 @@ CIJIAN_AI_WIKI_DEPLOY_KEY=~/.config/cijian/wiki_deploy_key   # SSH deploy key，
 | **M-B1** ✅ | API 任务平面 | ai_tasks/events/artifacts + shine_views、agent/site 端点、租约/长轮询/链式/串行化、视图防回退、sweeper、vitest | 52 测试全绿（新增 15 条 shine 用例：claim→heartbeat→result→链式入队、wiki 串行、视图 409、软删 redact、重试/重派 409）；2026-11-11 完成 | 3d |
 | **M-B2** ✅ | Agent worker + opencode runner | ai 线程、opencode runner（轻量 analyze profile + wiki profile）、工作区/守卫、恢复、`--once` 联调 | 本地真机全链路：文字 analyze 17.4s、图片 12.4s；wiki ingest/redact 各 ~6min（可接受，异步）；2026-11-11 完成 | 3d |
 | **M-B3** ✅ | 闪光异步化 | `POST /entries` 202、pending/failed 三态 UI、retry、图片经 agent 端点下发 | web `/tools/shine/` 与小程序「闪光」tab 已实现（2026-11-11）；待真机联调 | 2d |
-| **M-B4** | Wiki 记忆 | 私有 GitHub 仓 + deploy key、clone/pull/commit/push、`shine.wiki.ingest`（opencode）、growth/analyze_context 视图编译与发布、`shine.wiki.redact` | 连续 10 条 ingest 后 wiki 正确、引用可回溯；**API 侧数据库无任何 wiki 原文**；push 冲突 rebase 自愈；旧视图被 409 拒绝；删条目触发 redact | 4d |
+| **M-B4** ◐ | Wiki 记忆 | 私有 GitHub 仓 + deploy key、clone/pull/commit/push、`shine.wiki.ingest`（opencode）、growth/analyze_context 视图编译与发布、`shine.wiki.redact` | 机制已在本地 bare 仓跑通：ingest 生成 12 个页面/commit、视图 commit_count=2；redact 后证据归零、commit=3、commit_count 回退被 409 拒；API 库无 wiki 原文。待真机连续 10 条 ingest 与 push 冲突自愈验证 | 4d |
 | **M-B5** ◐ | 成长页 | review/lint 任务、`GET /growth`、web/mp 成长页、preferences 闭环 | 成长页（web 侧栏 + mp 独立页）与月度回顾触发已实现；lint 与 preferences 闭环待试运行 | 3d |
 | **M-B6** | 家庭试运行 14 天 | 太太真实使用；记忆质量评估（§11） | 1 页结论：继续/调整/收缩；wiki 健康分 | 14 天 |
 | **M-B7** | Phase 2/3 | query 问答、打卡自动候选、code/image 任务、容器沙箱 | 按 M-B6 结论排 | — |

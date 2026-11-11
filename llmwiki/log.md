@@ -1,5 +1,11 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-11] gotcha | whereami.com 是第三方网站；WW_verify 验证文件挂 cijian-site/public/
+
+需求里的 `whereami.com` 系笔误（第三方 Cloudflare 站点，仓库 grep 零命中）；我们的域名为
+whereami.cn 家族。企业微信验证文件放 `cijian-site/public/` push main，Vercel ~1 分钟上线，
+裸域/www 双 200。见 pages/gotcha-whereami-com.md。
+
 ## [2026-11-05] experienced | M-C3：练习打卡网页端上线（/tools/checkin）
 
 今日完成情况 / 待认领投递（预览→挂项目）/ 补字段 / 改派 / 项目管理（新建/编辑/启停）全在

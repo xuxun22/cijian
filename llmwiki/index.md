@@ -21,6 +21,7 @@
 - [gotcha-cors-www-origin](pages/gotcha-cors-www-origin.md) — Vercel 主域是 www，CORS 白名单只写裸域导致前端全被拦
 - [gotcha-mp-domain-check](pages/gotcha-mp-domain-check.md) — 小程序真机「连不上服务器」= 域名未备案被微信拦截；urlCheck:false 本地永远复现不了
 - [gotcha-mp-upload-filename](pages/gotcha-mp-upload-filename.md) — wx.uploadFile 无法自定义 multipart 文件名，orig_name 变 tmp_xxx → formData 传 name + 服务端优先采用
+- [gotcha-whereami-com](pages/gotcha-whereami-com.md) — whereami.com 是第三方网站非本项目域名；根路径静态文件（WW_verify 等）放 cijian-site/public/ 推 main 即生效
 
 ## howto 补充
 

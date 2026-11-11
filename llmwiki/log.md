@@ -131,3 +131,5 @@ Docker 29 + Compose 2.40；API 走 127.0.0.1:8787，公网入口挂 ACLI 共享 
 API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s —— 在线播放体验的长期瓶颈。
 
 ## [2026-11-11] howto | opencode runner 集成实测（M-B0 spike：JSON 契约/agents 目录/延迟/deploy key）
+
+## [2026-11-11] architecture | 看见闪光 AI 平面落地（M-B1~B3：API 任务队列 + agent opencode + wiki 视图 + web/mp UI）

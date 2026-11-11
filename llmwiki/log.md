@@ -133,3 +133,5 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 ## [2026-11-11] howto | opencode runner 集成实测（M-B0 spike：JSON 契约/agents 目录/延迟/deploy key）
 
 ## [2026-11-11] architecture | 看见闪光 AI 平面落地（M-B1~B3：API 任务队列 + agent opencode + wiki 视图 + web/mp UI）
+
+## [2026-11-11] ops | api 迁移到 43.173.111.191（独立 Caddy + Tailscale + 数据/密钥迁移，Actions 与自拉取均切新机）

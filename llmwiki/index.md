@@ -25,5 +25,6 @@
 ## howto 补充
 
 - CD 双通道：cijian-api 推 main 即部署（Tailscale + SSH），另有服务器 5 分钟自拉取 timer 兜底
+- [cijian-api-deploy](pages/cijian-api-deploy.md) — 生产部署拓扑（腾讯云 + Caddy + Tailscale + 5 分钟自拉取）与迁移步骤/坑
 - [shine-ai-plane](pages/shine-ai-plane.md) — 看见闪光 AI 平面：API 任务队列（不调模型）+ agent opencode 执行 + 私有 wiki 记忆/视图发布，含嵌套事务、wx 无 PATCH 等坑
 - [opencode-runner](pages/opencode-runner.md) — agent 用 `opencode run` 做 AI 执行器的实测契约：JSON 输出在 `part.text`、`.opencode/agents/`（复数）profile、`--file` 附图、延迟基线、wiki deploy key 流程

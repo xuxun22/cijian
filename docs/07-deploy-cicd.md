@@ -110,3 +110,34 @@ sudo /opt/cijian-agent/install.sh --tag v0.2.0   # 下载新 Release 并 systemc
 - 公网 22 关闭：CI/CD 部署需 Tailscale（deploy.yml 已支持 TS_AUTHKEY）；初始部署由 Mac mini 经 Tailscale SSH 手工完成
 - 已注册打印机：`p_macmini`（Mac mini，launchd 常驻 `com.cijian.agent`，CUPS：Mi_All_in_One_Inkjet_Printer）
 - 端到端验证：登录 → 上传 PNG → 建任务 → agent 领取 → CUPS 出纸（17s）→ done，事件序列完整
+
+## 迁移实录（2026-11-11，→ VM-4-9-ubuntu / 43.173.111.191）
+
+新机与旧机同构，但**不再依赖 ACLI 共享 Caddy**，改用独立 Caddy 终结 TLS。
+
+| 项 | 值 |
+|---|---|
+| 公网 IP | `43.173.111.191`（sslip：`https://43-173-111-191.sslip.io`） |
+| Tailscale | 节点 `cijian-api` = `100.94.198.50`（`tailscale up --ssh --accept-dns=false`） |
+| 系统 | Ubuntu 24.04.4，2C/2G/50G，Asia/Shanghai |
+| 代码 | `/opt/cijian-api/app`，deploy key（read-only，标题 `cijian-api-2`） |
+| 反向代理 | `/etc/caddy/Caddyfile`：`api.whereami.cn, 43-173-111-191.sslip.io → 127.0.0.1:8787`；全局 `acme_ca` 钉死 Let's Encrypt **生产** |
+| 兜底 | `cijian-deploy.timer`（5 分钟自拉取，与旧机同一份 `deploy.sh`） |
+| Actions secrets | `DEPLOY_HOST=100.94.198.50` / `DEPLOY_USER=ubuntu` / `DEPLOY_SSH_KEY`（新机 `~/.ssh/github_actions`），`workflow_dispatch` 实测 22s 成功 |
+
+迁移步骤（可复用）：
+
+1. 新机：`docker.io docker-compose-v2 git curl sqlite3` + `tailscale`（`--accept-dns=false` 避免影响 ACME/DNS）
+2. 新机生成部署密钥 → `gh api repos/xuxun22/cijian-api/keys` 注册 → `ssh-keyscan github.com` → clone
+3. 旧机 `docker compose stop api` → 拷 `cijian.db`（连同 `-wal/-shm` 一起，干净停机后一致）、`data/files`、`data/media`、`cijian.env` → 立刻 `start`
+4. 新机解包 → `chown -R root:root data`、`cijian.env` 归 ubuntu 600 → `docker compose up -d --build`
+5. 新机装 Caddy（官方 apt 源）+ 上面的 Caddyfile；安全组放行 80/443 后证书自动签发
+6. DNS 切 A 记录后**再做一次 3～4 步的数据同步**（切 DNS 前的写入都在旧机）
+7. 更新 GitHub secrets 的 `DEPLOY_HOST/DEPLOY_USER/DEPLOY_SSH_KEY` → `gh workflow run deploy.yml` 验证
+
+坑：
+
+- **安全组只开 22 时**：Caddy 报 `Timeout during connect (likely firewall problem)`，HTTP 80 也 308；LE 两个 challenge（http-01 / tls-alpn-01）都会失败。放行 80/443 后 `systemctl restart caddy` 立刻重试成功（不必等 10 分钟退避）。
+- Caddy 在失败后会退避最长 600s，手动 restart 可重置。
+- 旧机 `tailscale ssh` 只允许 `ubuntu` 用户，本机直接 `ssh xuxun22@...` 会被 ACL 拒；`tailscale ssh ubuntu@<ip>` 可以。
+- SQLite 容器内是 `node:sqlite`，宿主机没装 `sqlite3` CLI 时不要 `.backup`，直接干净停机后整组文件复制。

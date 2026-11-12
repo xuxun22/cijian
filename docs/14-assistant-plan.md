@@ -172,6 +172,26 @@ family/assistant/
 - 对话里说「日报别发给我了」→ 只退订说话人自己的；日程提醒不受影响。
 
 
+## 9.2 能力面（MCP，2026-11-12 落地）
+
+助手不再靠 `<reminder>` 这类标签猜意图，所有动作都走 MCP 工具；工具只是 `/api/assistant/cap/*` 的薄封装。
+
+| 工具 | 作用 |
+|---|---|
+| `printers` / `print_jobs` | 看打印机、看打印进度 |
+| `print_preview` / `print_submit` | 两段式打印：先给摘要和 intent，用户明确说「打」才提交 |
+| `checkin_today` / `checkin_records` / `checkin_stats` | 打卡三连 |
+| `shine_recent` / `shine_growth` | 闪光时间线与长期视图 |
+| `reminder_list` / `reminder_create` / `reminder_cancel` | 日程增删查 |
+| `subscription_get` / `subscription_set` | 新闻栏目订阅（只改本人） |
+
+安全模型：
+
+- API 在入队 `chat.reply` 时签发一枚 **只代表说话人** 的令牌（`scope=assistant`，15 分钟），写进任务 payload。
+- runner 把它和 API 地址注入 opencode 子进程环境；工作区 `opencode.json` 用 `{env:...}` 引用，**agent key 不下传**。
+- 打印用第二枚令牌（`scope=print`，10 分钟），绑定 file/printer/参数与说话人；别人拿到也用不了。
+- 令牌不能登录网页、不能领任务，只能调能力面。
+
 ## 10. 小程序
 
 新增/改造：
@@ -193,7 +213,8 @@ family/assistant/
 | P1 | `chat.reply` 全链路 + 人格 | 能回答并引用 wiki |
 | P2 | 调度器 + 日报/提醒 | 明早 8:07 自动收到日报 |
 | P3 | 记忆写入 + Hermes 记忆迁移 | 记得住「周三有英语课」 |
-| P3 ✅ | 已完成：`reminders` 表 + 每分钟扫描（事件前提醒 + 08:00 汇总）、对话动作（`<reminder>` / `<memory>` 结构化块）、wiki `family/assistant/{profile,preferences}.md` + `notes/YYYY-MM.md`、日程上下文注入、Hermes 记忆整理成档案与习惯 | 对话里说「记一下」→ 到点微信收到；问忌口/复查能答对 |
+| P3 ✅ | 已完成：`reminders` 表 + 每分钟扫描（事件前提醒 + 08:00 汇总）、对话动作、wiki `family/assistant/{profile,preferences}.md` + `notes/YYYY-MM.md`、日程上下文注入、Hermes 记忆整理成档案与习惯 | 对话里说「记一下」→ 到点微信收到；问忌口/复查能答对 |
+| P3.5 ✅ | 能力面 MCP：14 个工具（打印/打卡/闪光/提醒/订阅），每任务一枚短令牌；旧标签解析保留作兜底 | 问「这周打卡几天」能答出真实数字；说「提醒我…」真能建；说「删掉那条」真能删 |
 | P4 | 小程序归档页 + 深链 | 卡片点开落到对应页面 |
 | P5 | 家人接入 + Secret 轮换 | 妈妈微信里能收发 |
 | P6 | 下线 Hermes | 旧服务器 cron 全停 |

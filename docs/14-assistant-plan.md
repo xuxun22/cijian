@@ -192,6 +192,10 @@ family/assistant/
 - 打印用第二枚令牌（`scope=print`，10 分钟），绑定 file/printer/参数与说话人；别人拿到也用不了。
 - 令牌不能登录网页、不能领任务，只能调能力面。
 
+打印跨两轮：`print_preview` 把摘要与凭条（10 分钟）暂存在 `app_state.print_intent:<本人>`，用户回「打」时 `print_submit` 不传凭条也能提交，用过即清。对话任务还带最近 6 条消息（`recent_chat`），让「先发摘要、再回打」接得上。
+
+模型：`opencode/mimo-v2.6-flash-free`。原来的 deepseek-v4.1-flash 实测三次里只有一次真的调工具，会回「工具没连上」；mimo 连续两次都调，答复也更稳。
+
 ## 10. 小程序
 
 新增/改造：

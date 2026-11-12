@@ -181,6 +181,7 @@ family/assistant/
 | P1 | `chat.reply` 全链路 + 人格 | 能回答并引用 wiki |
 | P2 | 调度器 + 日报/提醒 | 明早 8:07 自动收到日报 |
 | P3 | 记忆写入 + Hermes 记忆迁移 | 记得住「周三有英语课」 |
+| P3 ✅ | 已完成：`reminders` 表 + 每分钟扫描（事件前提醒 + 08:00 汇总）、对话动作（`<reminder>` / `<memory>` 结构化块）、wiki `family/assistant/{profile,preferences}.md` + `notes/YYYY-MM.md`、日程上下文注入、Hermes 记忆整理成档案与习惯 | 对话里说「记一下」→ 到点微信收到；问忌口/复查能答对 |
 | P4 | 小程序归档页 + 深链 | 卡片点开落到对应页面 |
 | P5 | 家人接入 + Secret 轮换 | 妈妈微信里能收发 |
 | P6 | 下线 Hermes | 旧服务器 cron 全停 |
@@ -203,3 +204,4 @@ family/assistant/
 | 企业微信回调重试造成重复回复 | MsgId 去重 + 任务 dedupe |
 | Mac mini 休眠 | `caffeinate` 常驻；agent 掉线时回执降级为「稍后回你」 |
 | 素材 3 天过期 | 图片只在发送时上传，不长期存 media_id |
+| 兜底回执被误判为正式回复 | 回执用 `ack:<task_id>` 记账，正式回复仍按原 task_id 发送（有回归测试） |

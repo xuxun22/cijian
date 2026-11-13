@@ -196,6 +196,23 @@ family/assistant/
 
 模型：`opencode/mimo-v2.6-flash-free`。原来的 deepseek-v4.1-flash 实测三次里只有一次真的调工具，会回「工具没连上」；mimo 连续两次都调，答复也更稳。
 
+## 9.3 对话区与技能（P0，2026-11-13）
+
+**工作目录**：对话不再用一次性临时目录，固定在 `~/.local/share/cijian-agent/ai/work/home/`。里面只有 agent profile 和 `opencode.json`，跑完不销毁；`opencode.json` 不再包含仓库路径。
+
+**技能**：放在私有 wiki 仓 `family/assistant/skills/<id>/SKILL.md`，通过 `opencode.json` 的 `skills` 数组挂载，按 opencode 的渐进式方式加载（每步只给 id + 描述，正文按需加载）。
+
+- id 一律 `family-` 前缀；`description` 一句话说明何时使用；
+- 对话里通过 `skill_list / skill_read / skill_write / skill_delete` 四个 MCP 工具增删改，不需要 shell / 文件权限；
+- 改完 worker 检测到 skills 目录变脏，串行 commit + push（`assistant: skills update`）；
+- 全局 `~/.config/opencode/skills` 里的开发技能用 `skill` 权限挡在外面，只放 `family-*`。
+
+**权限**：对话 agent 只保留 `cijian_*` 与 `family-*` 技能；去掉 read/glob/grep，`external_directory` 只允许技能目录。这从结构上消灭了「翻实现、讲权限」的行为。
+
+**兜底**：身份/实现类短问题（「你是什么模型」「读一下 xxx.py」）在 worker 里直接给固定回答，不进模型。
+
+**已知局限**：mimo 仍会偶尔把模型名说出来，所以依赖兜底；换更强的对话模型可以减掉这层补丁。
+
 ## 10. 小程序
 
 新增/改造：

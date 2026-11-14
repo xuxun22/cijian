@@ -263,6 +263,40 @@ family/assistant/
 
 **实测**：申请→批准（裸「批准」）→repos.json 落盘→在新仓库里连改两轮（diff 累积）→提交到分支→清理，全链路走通；坏路径（非 git 目录、非爸爸批准、没申请就批准）都有对应报错。
 
+## 9.6 编码通道按项目划分 + 看板（P3，2026-11-14）
+
+**为什么**：编码通道原来只有一套仓库白名单，以后会同时有多个项目（此间、别的系统），改动必须落到明确的项目上，不能谁都能改一堆无关仓库。
+
+**白名单 v2**（`~/.config/cijian/repos.json`，仍由人工维护，微信里只能批仓库、不能建项目）：
+
+```json
+{
+  "default": "cijian",
+  "projects": {
+    "cijian": { "root": "~/work", "repos": ["cijian", "cijian-api", "cijian-agent", "cijian-site", "cijian-mp"] }
+  }
+}
+```
+
+旧格式 `{"root","repos"}` 照旧可读（整个文件视为单个 `cijian` 项目），第一次加仓库时自动迁成 v2。
+
+**项目如何落到任务上**：
+- `dev_tasks.project` / `repo_requests.project`（`openDb` 里 ALTER 迁移）；`POST /dev`、`POST /dev/repos`、`/dev/:id/continue|accept|discard` 都带 project；
+- 上下文里注入 `<可改的项目>cijian（没说就默认 cijian）</...>`；只有一个项目时没提项目就自动用它，多个项目时要求说清（MCP 侧 `CIJIAN_DEV_PROJECTS`/`CIJIAN_DEV_DEFAULT` 兜底）；
+- worker 按项目取仓库建 worktree：`_project_repos(project)`，项目不存在就回「没有 X 这个项目，现在能改的有…」。
+
+**看板**：`GET /dev/board?project=&days=14` → 按「在改 / 改完等确认 / 已提交 / 没改成」分组（本人的、近 14 天，时间转北京时间，标题截 40 字）。对话侧对应 `dev_board` 工具，以及 worker 的 `_board_reply` 兜底——小模型遇到清单类问题经常干脆不调工具，所以这类固定格式的问答由 worker 直接查 API 生成，稳定且省一次模型调用。
+
+**「提交/算了」也走 worker 兜底**（`_decide_reply`）：一个词的确定指令不再依赖模型；挑「最近一条改完了等人定」的任务，已提交/在改/没改成各有各的回话；「算了」还要求最近聊过编码结果，避免别的语境被误伤。
+
+**踩到的坑：能力工具在隔离配置下全丢**（本轮最大问题）
+- 现象：微信里让它建个文件，回「现在交不出去」/「我建不了文件」，看板和直接 `opencode run` 都正常；
+- 原因：对话子进程把 `XDG_CONFIG_HOME` 指到工作区内的空目录（隔离 24 个开发技能），而 `install_mcp` 只把 MCP 配置写到工作区根的 `opencode.json`——隔离后那份被忽略，26 个能力工具一个都没注册，模型手里只有 `skill`，于是把 `dev_task` 当技能调，报错后认输；
+- 修法：`install_mcp` 同时写 `<workdir>/.xdg-config/opencode/opencode.json`；
+- 教训：**「小模型不稳」要先排除工具根本没挂上**，别急着怪模型。另外模型会把工具名当技能名调（`skill dev_task`），提示词里写全名 `cijian_dev_task` 并明说「不是技能」。
+
+**实测**：显式项目「cijian 项目帮我…」→ 落 `project=cijian` → 改完推送 → 看板三档 → 裸「提交」→ 提交到分支 → 已提交；不提项目「在 docs 下建个 …」→ 自动落 cijian；裸「算了」→ 丢弃 + 清工作区。
+
 ## 10. 小程序
 
 新增/改造：

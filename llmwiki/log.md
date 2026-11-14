@@ -141,3 +141,7 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 ## [2026-11-11] architecture | 看见闪光 AI 平面落地（M-B1~B3：API 任务队列 + agent opencode + wiki 视图 + web/mp UI）
 
 ## [2026-11-11] ops | api 迁移到 43.173.111.191（独立 Caddy + Tailscale + 数据/密钥迁移，Actions 与自拉取均切新机）
+
+## [2026-11-15] architecture | 家庭助手架构成文（docs/15）：三层链路、26 个能力工具、六条主流程
+
+同时沉淀 gotcha：隔离 XDG_CONFIG_HOME 后 MCP 配置没搬，能力工具全丢，模型表现为「做不到」。

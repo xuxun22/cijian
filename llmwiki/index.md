@@ -9,6 +9,7 @@
 - [deployment-tencent-vm](pages/deployment-tencent-vm.md) — 腾讯云 vm-0-4-ubuntu 初始部署实录与拓扑
 - [print-pipeline](pages/print-pipeline.md) — 打印闭环的状态机、租约、重试、防重打
 - [checkin-pipeline](pages/checkin-pipeline.md) — 每日打卡 v1.4：投递即打卡、AI 指派、预览片 7 天/签名URL播放
+- [assistant-architecture](pages/assistant-architecture.md) — 家庭助手架构：微信回调→ai_tasks 任务平面→agent(opencode+MCP)→API 代发；三种身份与两个队列
 - [env-and-secrets](pages/env-and-secrets.md) — 密钥与口令的存放位置、轮换方法
 
 ## 踩坑（gotcha）
@@ -21,6 +22,7 @@
 - [gotcha-cors-www-origin](pages/gotcha-cors-www-origin.md) — Vercel 主域是 www，CORS 白名单只写裸域导致前端全被拦
 - [gotcha-mp-domain-check](pages/gotcha-mp-domain-check.md) — 小程序真机「连不上服务器」= 域名未备案被微信拦截；urlCheck:false 本地永远复现不了
 - [gotcha-mp-upload-filename](pages/gotcha-mp-upload-filename.md) — wx.uploadFile 无法自定义 multipart 文件名，orig_name 变 tmp_xxx → formData 传 name + 服务端优先采用
+- [gotcha-mcp-isolated-config](pages/gotcha-mcp-isolated-config.md) — 隔离 XDG_CONFIG_HOME 后 MCP 配置没跟着搬，26 个能力工具全丢，模型表现为「我做不到」
 - [gotcha-whereami-com](pages/gotcha-whereami-com.md) — whereami.com 是第三方网站非本项目域名；根路径静态文件（WW_verify 等）放 cijian-site/public/ 推 main 即生效
 
 ## howto 补充

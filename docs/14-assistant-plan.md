@@ -213,6 +213,36 @@ family/assistant/
 
 **已知局限**：mimo 仍会偶尔把模型名说出来，所以依赖兜底；换更强的对话模型可以减掉这层补丁。
 
+## 9.4 编码通道（P1，2026-11-14）
+
+对话进程不写代码；要改代码走独立通道：**微信一句话 → 独立 worktree 里让模型改 → 人看 diff 决定提交**。
+
+**流转**：
+1. 对话里说「帮我改…」→ 助手调 `dev_task`，回一句「我去改，弄好了告你」；
+2. worker 在 `~/.local/share/cijian-agent/ai/dev/<dt_id>/` 为白名单里每个仓库建 git worktree（分支 `assistant/<dt_id>`），用 `dev` agent（deepseek flash）改；
+3. 改完 worker 自己跑检查（有 `typecheck` 跑 typecheck，否则 `npm test`），把「改了什么 + diff --stat + 检查结果」直接发微信；
+4. 回「提交」→ `dev_submit`：worker 在有改动的仓库 commit（`assistant: <需求>`），保留分支、清掉 worktree；回「算了」→ `dev_discard`：连分支一起删；
+5. 不满意可以继续说，`dev_continue` 沿用同一工作区和 opencode 会话接着改。
+
+**项目白名单**：`~/.config/cijian/repos.json`（`{"root","repos"}`），人工编辑生效，微信里不审批新项目。
+
+**dev agent 的权限**（`prompts/dev.md`）：deny `*` 起步，只放行——
+- 工作区内的 read/edit/glob/grep；`external_directory` 全禁（读不到 `~/.ssh`、别的仓库）；
+- shell 白名单：git 只读操作 + `git add/stash`、`npm install/ci/run/test`、`npx tsc/vitest/astro`、`pytest`、`ls/cat/head/tail/rg/find/wc/sed -n/mkdir -p`；
+- 明确禁：`git commit`、`git push`、`sudo`、`rm -rf`、`curl`、`ssh`、`npm run dev/start`（后匹配优先）。
+
+**对话区隔离**：chat 和 dev 的子进程 `XDG_CONFIG_HOME` 指到工作区内空目录，全局 `~/.config/opencode`（24 个开发技能、开发用 MCP）不再混进来；凭证在 `XDG_DATA_HOME`，不受影响。
+
+**API**：`dev_tasks` 表（状态机 queued→running→done→committed/discarded）+ `/api/assistant/cap/dev*` 路由（投递/续改/提交/丢弃/查询，只能操作本人任务）+ ai_tasks 队列类型 `dev.task/dev.commit/dev.discard`（优先级仅次于对话，失败不自动重派）。完成与提交结果由 API 直接发微信，不经过对话模型。
+
+**实测**（2026-11-14）：API 直投、微信对话投递、续改、提交（分支留档）、丢弃（工作区+分支清理）、完成通知全链路通过；危险动作探测（push、读 `~/.zshrc`、读 `/etc/hosts`）全部被挡。
+
+**已知局限**：
+- mimo 偶发不调工具直接说「我去改」（1/5 概率，提示词已加约束，仍需观察）；
+- deepseek flash 只适合小改动，大重构质量无保证（当初的取舍）；
+- 每个人同时只有一个「最近」编码任务，新任务的结果没确认前，「提交」永远指向最近一条；
+- 提交只到本地分支，不 push、不合 main——合并仍是人工做。
+
 ## 10. 小程序
 
 新增/改造：

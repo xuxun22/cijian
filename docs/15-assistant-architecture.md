@@ -94,7 +94,8 @@ flowchart LR
 | `ai/worker.py` | AI 任务消费与分派（`AiWorker.handle`） | 见 §3.2，是本仓最厚的一块 |
 | `ai/runner.py` | opencode 子进程壳：准备 home/workspace、装 MCP、隔离配置、跑、抽文本 | `run`（对话/分析）、`run_dev`（编码） |
 | `ai/devwork.py` | 编码通道工作区：项目白名单、worktree、diff、commit、verify、cleanup | 提交与清理只在 worker 侧调用 |
-| `mcp_server.py` | MCP stdio 服务，26 个工具 → `/api/assistant/cap/*` | 不直连数据库；小模型丢参数时用原文兜底 |
+| `ai/skills.py` | 技能库：文件读写、lint、使用遥测、改动台账、回滚、归档/pin | 遥测与台账在本地状态目录，不进 wiki |
+| `mcp_server.py` | MCP stdio 服务，30 个工具 → `/api/assistant/cap/*` | 不直连数据库；小模型丢参数时用原文兜底 |
 | `ai/prompts/assistant-chat.md` | 对话人格 + 能力使用规则 + 不谈实现 | 随 `prepare_home` 每次拷进工作区 |
 | `ai/prompts/dev.md` | 编码 agent 人格 + 权限白名单 | 只认 worktree，禁止 commit/push/网络 |
 
@@ -105,7 +106,8 @@ flowchart LR
 | `chat.reply` | `_chat` | 人格对话；命中固定意图走 worker 兜底（见 §5.2） |
 | `shine.analyze` | `_analyze` | 看图片/文本，产出闪光条目结构化结果 |
 | `digest.daily` / `digest.weekly` | `_digest` | 出日报/周报，写 wiki 视图 |
-| `assistant.wiki.write` | `_memory_write` | 写一条家庭记忆，commit+push wiki |
+| `assistant.wiki.write` | `_memory_write` | 写一条家庭记忆（偏好/事实/流水），commit+push wiki |
+| `assistant.skill.review` | `_skill_review` | 回合后回顾：维护归档 + 模型出 JSON + lint/写盘/台账/提交/通知 |
 | `shine.wiki.*`（ingest/redact/lint） | `_wiki` | 家庭 wiki 维护 |
 | `dev.task` | `_dev_task` | 建 worktree → 跑编码 agent → 出 summary/diff/测试结果 |
 | `dev.commit` | `_dev_commit` | worker 侧 `git add/commit`，保留分支，清工作区 |
@@ -180,7 +182,7 @@ sequenceDiagram
 
 ### 4.2 对话里的能力调用与「worker 兜底」
 
-26 个能力工具分六组：
+30 个能力工具分六组（其中技能 8 个，是本地文件操作，其余走 `/api/assistant/cap/*`）：
 
 | 组 | 工具 |
 |---|---|
@@ -188,7 +190,7 @@ sequenceDiagram
 | 打卡 | `checkin_today` `checkin_records` `checkin_stats` |
 | 闪光 | `shine_recent` `shine_growth` |
 | 日程 | `reminder_list` `reminder_create` `reminder_cancel` `subscription_get` `subscription_set` |
-| 技能 | `skill_list` `skill_read` `skill_write` `skill_delete` |
+| 技能 | `skill_list` `skill_read` `skill_write` `skill_delete` `skill_stats` `skill_history` `skill_restore` `skill_pin` |
 | 编码 | `dev_task` `dev_continue` `dev_status` `dev_board` `dev_submit` `dev_discard` `repo_add` `repo_approve` |
 
 小模型（`opencode/mimo-v2.6-flash-free`）会漏参数、把工具当技能、甚至不调工具。所以**固定意图不交给模型**：
@@ -295,7 +297,7 @@ sequenceDiagram
 
 **权限边界**：dev agent 只允许读写自己 worktree、命令白名单（禁 commit/push/sudo/rm -rf/curl/ssh）、配置目录隔离；commit 与清理只由 worker 执行。
 
-### 4.6 技能（可增删改，且可回滚）
+### 4.6 技能（可增删改、会自己改进、也能回滚）
 
 ```mermaid
 flowchart LR
@@ -307,10 +309,64 @@ flowchart LR
 ```
 
 - 技能本体在 **wiki 仓**（`git` 历史 = 可回滚），不进代码仓；
-- id 必须 `family-` 前缀，与 24 个开发技能隔离（开发技能在全局配置里，对话子进程看不到）；
-- 渐进式加载：列表只给摘要，正文按需读——省上下文。
+- id 必须 `family-` 前缀，与开发技能隔离（开发技能在全局配置里，对话子进程看不到）；
+- 渐进式加载：列表只给摘要，正文按需读——省上下文；
+- 写入前一律过 lint：描述 ≤ 60 字、正文 ≥ 40 字且 ≤ 20KB、禁止密钥/长哈希；坏内容不落盘；
+- 删除 = **归档**到 `family/assistant/skills-archive/<id>-<时间戳>/`，永远可恢复。
 
-### 4.7 定时与提醒
+**工具面（8 个）**：`skill_list` / `skill_read` / `skill_write` / `skill_delete`（归档）/ `skill_stats`（使用看板）/ `skill_history`（改动台账）/ `skill_restore`（回滚）/ `skill_pin`（固定，不被自动归档）。`restore` 与 `pin` 只有 `dad` 能做（`actor_role` 由 API 随消息带下来）。
+
+**遥测不进 wiki**：`<state>/ai/skills-usage.json` 记 `use/view/patch` 计数与最后活动时间。`use` 由 worker 解析 opencode 事件流里的 `tool_use(tool=skill)` 得到——技能正文是 opencode 自己加载的，不经我们的 MCP，所以只能在事件流里看。
+
+**回合后自动回顾（直接改、事后通知）**：
+
+```mermaid
+sequenceDiagram
+    participant W as 微信
+    participant API
+    participant Worker
+    participant R as 回顾 agent
+    participant Wiki
+
+    W->>API: 「你别每次都列一堆，先说结论」
+    API->>Worker: chat.reply（带 recent_chat / actor_role）
+    Worker->>W: 正常回复
+    Worker->>Worker: 命中纠正词 → 动作 skill_review
+    API->>Worker: assistant.skill.review（串行）
+    opt 每天 21:40 兜底
+        API->>Worker: assistant.skill.review（reason=daily，带近 24h 对话）
+    end
+    Worker->>Wiki: 先做确定性维护（60 天没用且未 pin → 归档）
+    Worker->>R: 对话片段 + 技能清单/候选全文
+    R-->>Worker: JSON {note, ops[{action,id,markdown}]}
+    Worker->>Worker: lint → 写盘 → 台账 → 最多 1 新建/2 处改动，pinned 跳过
+    Worker->>Wiki: 一次 commit + push
+    Worker->>W: 「刚把「先说结论」记法改了一下：… 要是不对，跟我说「改回去」」
+```
+
+- 模型只产出 JSON，**没有文件和 shell 权限**；落盘、校验、提交都在 worker 做，写坏过不了 lint；
+- 没改就没文本，`deliverChat` 不发——**不拿「今天没什么要改的」打扰人**；
+- 回滚一条命令：`skill_history` 看最近改动 → `skill_restore`（新建的改动 = 撤销新建并归档）；
+- 回顾用便宜付费模型（默认 `deepseek/deepseek-flash`），不与对话抢免费额度；可用 `CIJIAN_AI_REVIEW_MODEL` 覆盖。
+
+### 4.7 记忆分层（偏好 / 事实 / 流水）
+
+```mermaid
+flowchart TB
+    M["对话回复里的记忆块"] --> K{"kind"}
+    K -->|preference| P["family/assistant/preferences.md<br/>称呼、风格、忌口、禁忌（全量注入）"]
+    K -->|fact| F["family/assistant/facts.md<br/>固定安排、东西放哪（注入最近 80 行）"]
+    K -->|note 或不写| N["family/assistant/notes/YYYY-MM.md<br/>当月流水（只注入最近 40 行）"]
+    P --> C["下一轮对话 &lt;家庭记忆&gt;"]
+    F --> C
+    N --> C
+```
+
+- 写入口：`<memory kind="preference|fact">…</memory>`，不写 kind 就是流水；API 把 `kind` 透传给 `assistant.wiki.write`；
+- 偏好与事实写之前做完全重复检查，重复直接返回 `duplicate`，不产生提交；
+- 注入顺序：`profile.md` → `preferences.md` → `facts.md`（最近 80 行）→ `notes`（最近 40 行），总长截 3500 字。
+
+### 4.8 定时与提醒
 
 - **定时任务**（`schedules` 表）：API 每 30s tick（固定 UTC+8），到点把 `ai_task` 丢进队列；内容生成仍由 agent 做。
 - **提醒**（`reminders` 表）：对话里说「明早 7 点叫我」，模型通过 `reminder_create` 落库，或者回复里的 `<reminder>{...}</reminder>` 块被 worker 拆出来转成动作；到点由调度器发微信。
@@ -341,6 +397,9 @@ flowchart LR
 | 小模型漏参数 | 工具被调但参数空 | 注入微信原文 `CIJIAN_USER_TEXT` 兜底；固定意图由 worker 直接执行 |
 | opencode 偶发卡死 | 对话 120s 超时 | 心跳/取消机制杀掉子进程；固定意图已有兜底，不影响主路径 |
 | 路由遮蔽 | `GET /dev/repos` 被 `/dev/:id` 吃掉 | `/dev/repos`、`/dev/board` 必须注册在 `/dev/:id` 之前（有回归测试） |
+| **归档技能仍被加载** | 收起（归档）的技能还在模型可用列表里 | opencode **递归扫描** skills 目录，`.archive/` 也会被当成技能；归档放同级 `skills-archive/`，并一起提交 |
+| **免费模型共享额度** | 连续调用后 `provider.quota: Free usage limit reached`，对话一起挂 | 回顾任务用便宜的付费模型（`deepseek/deepseek-flash`）；免费额度只留给日常对话 |
+| 只看 stderr 会漏报错 | 子进程 exit 1 但错误信息为空 | provider 错误只出现在 stdout 事件流里；`runner._exit_error` 兜底解析 |
 | 构建环境类型更严 | 本地 `tsc` 过、Docker 构建失败 | 行类型转换写 `as unknown as X[]` |
 | 部署残留容器 | compose 改名后重名冲突 | `docker rm -f <旧容器>` 再 `systemctl start cijian-deploy.service` |
 

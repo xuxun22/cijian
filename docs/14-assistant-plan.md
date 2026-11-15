@@ -297,6 +297,33 @@ family/assistant/
 
 **实测**：显式项目「cijian 项目帮我…」→ 落 `project=cijian` → 改完推送 → 看板三档 → 裸「提交」→ 提交到分支 → 已提交；不提项目「在 docs 下建个 …」→ 自动落 cijian；裸「算了」→ 丢弃 + 清工作区。
 
+## 9.7 技能自改进 + 记忆分层（P4，2026-11-15）
+
+参考 `hermes-agent` 的技能管理/策展/回合后回顾，只搬能落地的部分（不做 gateway、不改工具面）：
+
+**技能库（`cijian_agent/ai/skills.py`）**
+- 文件仍在 wiki `family/assistant/skills/<id>/SKILL.md`；归档放同级的 `skills-archive/<id>-<时间戳>/`；
+- 本地状态目录（`<state>/ai/`）：`skills-usage.json`（use/view/patch、最后活动、pinned）、`skills-ledger.jsonl`（每次改动一条）、`skills-blobs/`（内容寻址的历史正文）；
+- 写入 lint：`family-` 前缀、描述 ≤ 60 字、正文 ≥ 40 字且 ≤ 20KB、拒收密钥/长哈希；
+- MCP 增 4 个工具：`skill_stats` / `skill_history` / `skill_restore` / `skill_pin`；`restore`、`pin` 只允许 `dad`（`actor_role` 随消息下发）；`skill_delete` 改为归档。
+
+**使用遥测**：技能正文是 opencode 自己加载的（`skill` 工具），不经我们的 MCP，所以 worker 解析 `run --format json` 事件流里的 `tool_use(tool=skill, state.input.id)` 来记 `use`。
+
+**回合后回顾（直接改、事后通知）**
+- 触发：对话回复里命中纠正词（不对/以后别/太啰嗦…）→ worker 往 actions 里加 `skill_review`，API 入队 `assistant.skill.review`；另加每天 21:40 的兜底定时任务（`sch_skill_review`，payload 里带近 24h 对话）；
+- 执行：先做确定性维护（60 天未用且未 pin → 归档），再把「对话片段 + 技能清单 + 候选全文」交给回顾 agent（无工具、无文件权限），它只输出 `{note, ops[{action,id,markdown}]}`；
+- 落盘：lint → 最多 1 新建/2 处改动 → pinned 跳过 → 台账 → 一次 commit+push → 微信通知本人；没改就没文本，不发；
+- 模型：默认 `deepseek/deepseek-flash`（便宜付费），避免和对话抢免费额度，可用 `CIJIAN_AI_REVIEW_MODEL` 覆盖。
+
+**记忆分层**：`<memory kind="preference|fact">` → `preferences.md` / `facts.md`；不写 kind 仍是 `notes/YYYY-MM.md`。偏好与事实写前做完全重复检查；注入时 profile → preferences → facts（近 80 行）→ notes（近 40 行），总长 3500 字。
+
+**踩到的坑**
+- **opencode 递归扫描 skills 目录**：归档放在 `skills/.archive/` 时，归档技能照样出现在模型可用列表里（实测列出 `family-dead-20260101`）。归档必须放同级 `skills-archive/`，`_sync_skills` 两个路径一起提交。
+- **免费模型是共享额度**：连续压测后 `opencode/*-free` 全部 429（`Free usage limit reached`），连对话模型一起挂。回顾改用付费便宜模型；同时 `runner` 的报错原来只看 stderr（为空），现在会把 stdout 里的 `provider.*` 错误带出来。
+- 回顾自动新建的技能质量可用（实测「先给结论」一篇 586 字节，结构完整、过了 lint），但仍保留 pin + 单条回滚 + 「改回去」入口兜底。
+
+**实测**：单测 21 项（技能库 11、回顾 6、事件流 4）+ API 104 项全绿；真实模型演练产出一篇新技能并生成通知文案。
+
 ## 10. 小程序
 
 新增/改造：

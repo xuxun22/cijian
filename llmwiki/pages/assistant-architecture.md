@@ -28,6 +28,17 @@
 
 固定意图不交给模型：身份类 canned、裸「批准」、看板（在改/待确认/已提交）、裸「提交/算了」都由 worker 直接执行（`_repo_approve_reply` / `_board_reply` / `_decide_reply`）。模型侧再加：`CIJIAN_USER_TEXT` 原文兜底、工具名写全 `cijian_dev_task`、「做不到」重试一次。
 
+## 技能自改进 + 记忆分层（2026-11-15）
+
+- 技能仍在 wiki `family/assistant/skills/`，归档在**同级** `family/assistant/skills-archive/`
+  （放 skills 里会被 opencode 递归扫到，见 [gotcha-skill-archive-recursive](gotcha-skill-archive-recursive.md)）；
+- 遥测/台账在本地 `<state>/ai/`：`skills-usage.json`（use/view/patch）、`skills-ledger.jsonl`、`skills-blobs/`；
+- 能力工具从 26 → 30：新增 `skill_stats` / `skill_history` / `skill_restore` / `skill_pin`（后两个只有 dad 能做）；
+- 回合后回顾（`assistant.skill.review`）：纠正词即时触发 + 每天 21:40 兜底；模型只出 JSON，
+  lint/写盘/台账/commit/通知都在 worker；没改不发；回顾模型用 `deepseek/deepseek-flash`，
+  避免和对话抢免费额度（见 [gotcha-opencode-free-quota](gotcha-opencode-free-quota.md)）；
+- 记忆三层：`preferences.md`（全量注入）/ `facts.md`（近 80 行）/ `notes/YYYY-MM.md`（近 40 行）。
+
 ## 查证入口
 
 ```bash

@@ -345,6 +345,7 @@ sequenceDiagram
 ```
 
 - 模型只产出 JSON，**没有文件和 shell 权限**；落盘、校验、提交都在 worker 做，写坏过不了 lint；
+- 候选只从「用户说的话 + 最近用过的技能」里挑（不发我们自己通知里出现的 id）；update 时若删掉了原文里的反引号工具名/`skill_*`/`dev_*`，整条跳过——回顾只该增补，不该抹掉操作性细节；
 - 没改就没文本，`deliverChat` 不发——**不拿「今天没什么要改的」打扰人**；
 - 回滚一条命令：`skill_history` 看最近改动 → `skill_restore`（新建的改动 = 撤销新建并归档）；
 - 回顾用便宜付费模型（默认 `deepseek/deepseek-flash`），不与对话抢免费额度；可用 `CIJIAN_AI_REVIEW_MODEL` 覆盖。

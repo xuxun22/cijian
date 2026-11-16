@@ -17,7 +17,7 @@
 | agent key | 本机 `agent.env` | 心跳/领取/报果/素材 |
 | 能力令牌 | API 每次入队临时签，放 payload | 只能 `/api/assistant/cap/*` |
 
-对话进程没有文件/shell 权限，只能调 MCP 的 26 个工具；编码 agent 只能动自己的 worktree，commit 由 worker 做。
+对话进程没有文件/shell 权限，只能调 MCP 的 31 个工具；编码 agent 只能动自己的 worktree，commit 由 worker 做。
 
 ## 两个队列别混
 
@@ -33,7 +33,7 @@
 - 技能仍在 wiki `family/assistant/skills/`，归档在**同级** `family/assistant/skills-archive/`
   （放 skills 里会被 opencode 递归扫到，见 [gotcha-skill-archive-recursive](gotcha-skill-archive-recursive.md)）；
 - 遥测/台账在本地 `<state>/ai/`：`skills-usage.json`（use/view/patch）、`skills-ledger.jsonl`、`skills-blobs/`；
-- 能力工具从 26 → 30：新增 `skill_stats` / `skill_history` / `skill_restore` / `skill_pin`（后两个只有 dad 能做）；
+- 能力工具从 26 → 30：新增 `skill_stats` / `skill_history` / `skill_restore` / `skill_pin`（后两个只有 dad 能做）；2026-11-16 编码通道计划先行再加 `dev_approve`，现为 31 个；
 - 回合后回顾（`assistant.skill.review`）：纠正词即时触发 + 每天 21:40 兜底；模型只出 JSON，
   lint/写盘/台账/commit/通知都在 worker；没改不发；回顾模型用 `deepseek/deepseek-flash`，
   避免和对话抢免费额度（见 [gotcha-opencode-free-quota](gotcha-opencode-free-quota.md)）；

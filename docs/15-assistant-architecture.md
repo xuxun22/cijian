@@ -26,7 +26,7 @@
 **为什么要有能力令牌**：对话进程（opencode 子进程）不拿 agent key，也不拿数据库。它拿到的只是一枚「只代表这个人、只能调这些接口、15 分钟就过期」的临时票。这样模型/MCP 被带偏也越不了权。
 
 **三权分立**：
-- 对话模型没有文件、shell、网络权限，只能调 MCP 暴露的 26 个家庭能力；
+- 对话模型没有文件、shell、网络权限，只能调 MCP 暴露的 31 个家庭能力；
 - 编码模型只能读写自己那套 worktree，命令走白名单；
 - 真正的 commit / push、状态落库、发消息，全部由 worker 或 API 做。
 
@@ -57,7 +57,7 @@ flowchart LR
     subgraph MAC["Mac mini（家）"]
         AG["cijian-agent<br/>launchd 守护"]
         OC["opencode 子进程<br/>对话 / 编码"]
-        MCP["mcp_server.py<br/>26 个能力工具"]
+        MCP["mcp_server.py<br/>31 个能力工具"]
         CUPS["CUPS"]
         PRT["打印机"]
         WIKI["wiki 仓<br/>记忆 + 技能"]
@@ -95,7 +95,7 @@ flowchart LR
 | `ai/runner.py` | opencode 子进程壳：准备 home/workspace、装 MCP、隔离配置、跑、抽文本 | `run`（对话/分析）、`run_dev`（编码） |
 | `ai/devwork.py` | 编码通道工作区：项目白名单、worktree、diff、commit、verify、cleanup | 提交与清理只在 worker 侧调用 |
 | `ai/skills.py` | 技能库：文件读写、lint、使用遥测、改动台账、回滚、归档/pin | 遥测与台账在本地状态目录，不进 wiki |
-| `mcp_server.py` | MCP stdio 服务，30 个工具 → `/api/assistant/cap/*` | 不直连数据库；小模型丢参数时用原文兜底 |
+| `mcp_server.py` | MCP stdio 服务，31 个工具 → `/api/assistant/cap/*` | 不直连数据库；小模型丢参数时用原文兜底 |
 | `ai/prompts/assistant-chat.md` | 对话人格 + 能力使用规则 + 不谈实现 | 随 `prepare_home` 每次拷进工作区 |
 | `ai/prompts/dev.md` | 编码 agent 人格 + 权限白名单 | 只认 worktree，禁止 commit/push/网络 |
 
@@ -122,7 +122,7 @@ flowchart LR
 |---|---|---|
 | 入站 | `routes/wecom.ts` | 企业微信回调：去重（msg_id）→ 记 `wecom_messages` → 签能力令牌 → 入队 `chat.reply` |
 | 任务平面 | `routes/agentAI.ts` | `/tasks/claim`（长轮询）、心跳、报果、失败、素材下载、报果后**直接回微信**（`deliverChat`） |
-| 能力面 | `routes/assistantCap.ts` | `/api/assistant/cap/*`：26 个能力端点，按令牌里的说话人鉴权 |
+| 能力面 | `routes/assistantCap.ts` | `/api/assistant/cap/*`：31 个能力端点，按令牌里的说话人鉴权 |
 | 打印平面 | `routes/agents.ts` | agent 心跳 / claims / print_jobs 报果 |
 | 打卡 | `routes/agentCheckin.ts` | 媒体上报、项目清单、sync 差量、重命名确认 |
 | 领域 | `services/*.ts` | `ai`（任务类型/租约/重试/组队）、`dev`（编码任务状态机）、`capability`（JWT）、`print`、`checkin`、`shine`、`reminders`、`subscriptions`、`wecom`、`scheduler`、`sweeper` |
@@ -182,7 +182,7 @@ sequenceDiagram
 
 ### 4.2 对话里的能力调用与「worker 兜底」
 
-30 个能力工具分六组（其中技能 8 个，是本地文件操作，其余走 `/api/assistant/cap/*`）：
+31 个能力工具分六组（其中技能 8 个，是本地文件操作，其余走 `/api/assistant/cap/*`）：
 
 | 组 | 工具 |
 |---|---|
@@ -191,7 +191,7 @@ sequenceDiagram
 | 闪光 | `shine_recent` `shine_growth` |
 | 日程 | `reminder_list` `reminder_create` `reminder_cancel` `subscription_get` `subscription_set` |
 | 技能 | `skill_list` `skill_read` `skill_write` `skill_delete` `skill_stats` `skill_history` `skill_restore` `skill_pin` |
-| 编码 | `dev_task` `dev_continue` `dev_status` `dev_board` `dev_submit` `dev_discard` `repo_add` `repo_approve` |
+| 编码 | `dev_task` `dev_approve` `dev_continue` `dev_status` `dev_board` `dev_submit` `dev_discard` `repo_add` `repo_approve` |
 
 小模型（`opencode/mimo-v2.6-flash-free`）会漏参数、把工具当技能、甚至不调工具。所以**固定意图不交给模型**：
 
@@ -199,11 +199,11 @@ sequenceDiagram
 flowchart TD
     A["chat.reply 到达"] --> B{"一句话固定话术？<br/>身份/模型类"}
     B -->|是| Z1["直接回 canned"]
-    B -->|否| C{"「批准」且有待批仓库？"}
+    B -->|否| C{"「批准」且有待批仓库/方案？"}
     C -->|是| Z2["worker 直接 approve"]
-    C -->|否| D{"问在改/待确认/已提交？"}
-    D -->|是| Z3["worker 查 /dev/board<br/>格式化回三档"]
-    D -->|否| E{"裸「提交 / 算了」<br/>且有改完待定任务？"}
+    C -->|否| D{"问在改/等批/等回话/已提交？"}
+    D -->|是| Z3["worker 查 /dev/board<br/>格式化回六档"]
+    D -->|否| E{"裸「提交 / 算了」<br/>且有可处理任务？"}
     E -->|是| Z4["worker 直接 accept / discard"]
     E -->|否| F["交给模型 + MCP"]
     F --> G{"回复像「做不到」<br/>且确实是编码需求？"}
@@ -262,7 +262,7 @@ flowchart LR
 
 幂等：处理完就移出 inbox；holding 文件名带 `media_id`，归档名以 API 为准，sync 每轮收敛——**崩溃重启也不需要状态文件**。
 
-### 4.5 编码通道（项目 → worktree → 提交）
+### 4.5 编码通道（计划 → 批准 → worktree → 提交）
 
 ```mermaid
 sequenceDiagram
@@ -272,19 +272,34 @@ sequenceDiagram
     participant API as cijian-api
     participant W as AiWorker
     participant DW as devwork.py
+    participant PLAN as opencode<br/>dev-plan（只读）
     participant DEV as opencode<br/>dev agent
 
     U->>OC: 「cijian 里帮我加个本周合计」
     OC->>API: dev_task(prompt, project=cijian)
-    API->>API: 建 dev_tasks(status=queued, project)
-    API->>W: 入队 dev.task（串行）
+    API->>API: 建 dev_tasks(status=planning, project)
+    API->>W: 入队 dev.task(phase=plan，串行)
     W->>DW: create_workspace(ai/dev/dt_x, 项目仓库, assistant/dt_x)
     DW-->>W: worktree（不动主工作树）
+    W->>PLAN: opencode run --agent dev-plan（只读 + 只读命令）
+    PLAN-->>W: 计划（目标 / 涉及 / 步骤 / 风险）
+    W->>API: 报果（plan）
+    API->>U: 方案 +「回『批准』就开始改」
+    U->>OC: 「批准」
+    OC->>API: dev_approve()
+    API->>W: 入队 dev.task(phase=execute, plan)
     W->>DEV: opencode run --agent dev（限工作区 + 命令白名单）
-    DEV->>DEV: 读改文件、跑测试
+    DEV->>DEV: 按计划改文件、跑检查
+    alt 遇到方向性选择
+        DEV->>DW: 写 .cijian-ask.json 后停下
+        W->>API: 报果（waiting_input + question/options）
+        API->>U: 问题 + 选项（微信 / 小程序）
+        U->>API: 小程序点选项 / 微信回一句
+        API->>W: 入队继续（answer，复用会话）
+    end
     W->>DW: stage_and_stat + verify
     W->>API: 报果（summary / diff_stat / tests）
-    API->>U: 改动摘要 +「要提交回『提交』，不要了回『算了』」
+    API->>U: 改动摘要 +「提交 / 算了」
     U->>OC: 「提交」
     OC->>API: dev_submit()
     API->>W: 入队 dev.commit
@@ -293,9 +308,15 @@ sequenceDiagram
     API->>U: 「提交好了：cijian（分支 assistant/dt_x）」
 ```
 
+**计划先行**：`dev_tasks.status` 为 `planning → waiting_plan → queued → (running) → waiting_input* → done → committed|discarded`，失败为 `failed`。`dev.task` 仍是唯一的执行任务类型，payload 的 `phase` 区分 `plan`/`execute`，避免两种任务跨类型并发撞 worktree。批准时用新会话执行、复用同一个 worktree，计划原文进入执行消息；计划会话只用于讨论，不用于改代码。
+
+**执行中提问**：执行 agent 遇到「两种做法会显著改变结果」时，在工作区根目录写 `.cijian-ask.json`（2~4 个选项）后结束；worker 的 `devwork.take_question()` 读走并删除文件（不进入 diff/提交），报 `needs_input`，API 落 `waiting_input`。回答后继续同一个执行会话。
+
+**小程序看板**：`/api/assistant/dev/*`（JWT），按「等你批计划 / 等你回话 / 改完等你定 / 在改 / 已提交 / 没改成」分组，支持批准、提意见、点选项、提交、继续改、算了。只有 `dad` 能看：小程序 `users.id` 与企业微信 UserID 通过 `users.wecom_user_id` 绑定（`wx-login` 按企微姓名自动匹配，匹配不到手动绑一次）。
+
 **项目维度**：`~/.config/cijian/repos.json` 的 v2 结构（`default` + `projects.{name}.{root,repos}`）。任务落 `project`；没说项目且只有一个项目时自动用默认；多项目要求说清。新增项目只能人工改文件，微信里只能批**仓库**（且只有 `dad` 角色能批）。
 
-**权限边界**：dev agent 只允许读写自己 worktree、命令白名单（禁 commit/push/sudo/rm -rf/curl/ssh）、配置目录隔离；commit 与清理只由 worker 执行。
+**权限边界**：dev-plan 只读；dev agent 只允许读写自己 worktree、命令白名单（禁 commit/push/sudo/rm -rf/curl/ssh）、配置目录隔离；commit 与清理只由 worker 执行。
 
 ### 4.6 技能（可增删改、会自己改进、也能回滚）
 
@@ -393,12 +414,16 @@ flowchart TB
 
 | 坑 | 现象 | 结论 |
 |---|---|---|
-| **隔离配置丢工具** | 微信里让它建文件，回「我建不了文件 / 交不出去」 | 对话子进程把 `XDG_CONFIG_HOME` 指到工作区空目录做隔离，而 MCP 配置只写在工作区根——隔离后那份被忽略，26 个工具全没注册。修法：`install_mcp` 同时写 `.xdg-config/opencode/opencode.json`。**「小模型不稳」先查工具挂没挂上** |
+| **隔离配置丢工具** | 微信里让它建文件，回「我建不了文件 / 交不出去」 | 对话子进程把 `XDG_CONFIG_HOME` 指到工作区空目录做隔离，而 MCP 配置只写在工作区根——隔离后那份被忽略，26 个工具全没注册（当时）。修法：`install_mcp` 同时写 `.xdg-config/opencode/opencode.json`。**「小模型不稳」先查工具挂没挂上** |
 | 模型把工具当技能 | 报 `Unable to load skill dev_task` | 提示词里写全名 `cijian_dev_task` 并注明「不是技能」；「做不到」类回复重试用一次 |
 | 小模型漏参数 | 工具被调但参数空 | 注入微信原文 `CIJIAN_USER_TEXT` 兜底；固定意图由 worker 直接执行 |
 | opencode 偶发卡死 | 对话 120s 超时 | 心跳/取消机制杀掉子进程；固定意图已有兜底，不影响主路径 |
 | 路由遮蔽 | `GET /dev/repos` 被 `/dev/:id` 吃掉 | `/dev/repos`、`/dev/board` 必须注册在 `/dev/:id` 之前（有回归测试） |
 | **归档技能仍被加载** | 收起（归档）的技能还在模型可用列表里 | opencode **递归扫描** skills 目录，`.archive/` 也会被当成技能；归档放同级 `skills-archive/`，并一起提交 |
+| **小程序 JWT 用户 ≠ 企业微信用户** | 开发看板查不到任务 | `users.id` 是 `u_…`，`dev_tasks.requester` 是 `XuXun`；用 `users.wecom_user_id` 绑定，`wx-login` 按企微姓名自动匹配，匹配不到手动绑一次 |
+| **AI 任务异常不走 applyDevResult** | 计划/执行超时后看板一直「在出方案」 | agent 超时/崩溃只走 `/tasks/:id/fail`；终态失败后补 `markDevTaskFailed`，可重试的失败等重派 |
+| **能力面漏角色校验** | 孩子说「批准」也能批爸爸的计划 | 小程序 JWT 面有 `requireDad`，`/api/assistant/cap/dev/*` 也要统一 `requireDevDad` |
+| **同毫秒任务排序不稳** | 计划/执行任务同一毫秒入库，`ORDER BY created_at DESC` 挑错 | 所有「最近一条」和看板查询加 `rowid DESC` 兜底 |
 | **免费模型共享额度** | 连续调用后 `provider.quota: Free usage limit reached`，对话一起挂 | 回顾任务用便宜的付费模型（`deepseek/deepseek-flash`）；免费额度只留给日常对话 |
 | 只看 stderr 会漏报错 | 子进程 exit 1 但错误信息为空 | provider 错误只出现在 stdout 事件流里；`runner._exit_error` 兜底解析 |
 | 构建环境类型更严 | 本地 `tsc` 过、Docker 构建失败 | 行类型转换写 `as unknown as X[]` |

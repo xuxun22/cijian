@@ -325,6 +325,52 @@ family/assistant/
 
 **实测**：单测 26 项（技能库 12、回顾 10、事件流 4）+ API 101 项全绿；真实模型演练产出一篇新技能并生成通知文案。
 
+## 9.8 编码通道「计划先行」+ 小程序开发看板（P4.5，2026-11-16）
+
+**为什么**：原来 `dev_task` 是一次性跑完再给人看 diff，遇到方向性歧义只能猜，猜错了整轮白做。改成先出计划、爸爸批准后再动代码；执行中真正卡住时也能停下来让人选。
+
+**状态机（`dev_tasks.status`）**
+
+| 状态 | 含义 | 谁动 |
+|---|---|---|
+| `planning` | 正在读代码、出方案 | worker |
+| `waiting_plan` | 方案好了，等批 | 爸爸 |
+| `queued` | 已批准，排队执行 | worker |
+| `running` | 执行中（worker 暂不单独上报，保留） | worker |
+| `waiting_input` | 执行卡在一个选择上，等选 | 爸爸 |
+| `done` | 改完了，等提交/算了/继续改 | 爸爸 |
+| `failed` / `committed` / `discarded` | 没改成 / 已提交 / 已丢弃 | — |
+
+**任务类型**：仍然只有 `dev.task`，用 payload 的 `phase: "plan" | "execute"` 区分两段，避免 `dev.plan` 和 `dev.task` 跨类型并发撞同一个 worktree。`dev.commit` / `dev.discard` 不变。
+
+**API**
+- `POST /dev` → `planning` + 入队 `phase=plan`；
+- `POST /dev/:id/approve` → `queued` + 入队 `phase=execute`（新会话，复用同一 worktree，计划原文进消息）；
+- `POST /dev/:id/revise {message}`（或 `/continue`）→ 回 `planning`，把意见和上一版计划一起给 plan agent；
+- `POST /dev/:id/answer {value|text}` → 清问题、`queued`、入队继续执行；
+- `GET /dev/board` → 六组：等你批计划 / 等你回话 / 改完等你定 / 在改 / 已提交 / 没改成，外加 `projects` 汇总和 `needs_reply`；
+- 小程序 JWT 面：`GET /api/assistant/dev/board`、`GET /dev/:id`、`POST /dev/:id/approve|revise|answer|continue|accept|discard`。
+
+**agent 侧**
+- 新增只读 `dev-plan.md`：read/glob/grep + 只读 shell，禁 `edit`/`npm`/`commit`；输出 ≤20 行中文计划（目标/涉及/步骤/风险）。plan 阶段默认 15 分钟超时（`CIJIAN_AI_PLAN_TIMEOUT`），模型默认跟 `ai_dev_model`（可用 `CIJIAN_AI_PLAN_MODEL` 换更稳的）。
+- `dev.md` 增加执行阶段约定：遇到「两种做法会显著改变结果」时，在工作区根目录写 `.cijian-ask.json`（`{question, options: [..]}`，2~4 项），写完就停；worker 用 `take_question()` 读走并删文件（不进入 diff/提交），报 `needs_input`。
+- 回答后继续用同一个执行会话；计划会话不用于执行，避免把「讨论方案」的上下文带进改代码。
+
+**小程序**
+- 新增 tab「开发」：`pages/dev/board`（按「需要你做什么」分组 + 项目汇总 + 快捷批准/选项/提交）+ `pages/dev/detail`（完整计划、问题选项、diff 概况、提交/继续改/算了）。
+- 权限：只有爸爸能看。小程序登录的是 `users.id`，编码任务属于企业微信 UserID，新增 `users.wecom_user_id`，`wx-login` 带名字时按企微姓名自动匹配，匹配不到在看板里手动绑一次；非 dad 角色 403。
+- 通知：方案/问题/结果都复用 `dev.task` 的 `result.text` 发微信，小程序里同时能看到同一份。
+
+**踩到的坑**
+- **JWT 用户 ≠ 企业微信用户**：`users.id` 是 `u_…`，`dev_tasks.requester` 是 `XuXun`；不绑就永远查不到自己的任务。绑定时按 `wecom_users.name`/`user_id` 精确匹配。
+- **同一毫秒创建的任务排序不稳**：计划任务和执行任务可能同毫秒入库，`ORDER BY created_at DESC` 会挑错。所有「最近一条」和看板查询都加 `rowid DESC` 兜底；单测里也按 `rowid` 取最新。
+- `.cijian-ask.json` 放在 worktree **根目录**（各仓库子目录之外），仍需在读完后主动删除，避免下一轮误读；`take_question` 在 `stage_and_stat` 之前调用。
+- 计划中的「需要确认」不要写成阻塞问题：审批本身就是闸门；只有执行阶段才用 `.cijian-ask.json`。
+- **AI 任务异常不走 `applyDevResult`**：agent 超时/崩溃走 `/tasks/:id/fail`，只改 `ai_tasks`，编码任务会永远停在 `planning`/`queued`。`reportAiFail` 终态失败后要补 `markDevTaskFailed`，把 `dev_tasks` 标成 `failed`；可重试的失败先保持原状态等重派。
+- **能力面也要限爸爸**：小程序 JWT 面有 `requireDad`，但 MCP 能力面（`/api/assistant/cap/dev/*`）原来只校验 requester；不补角色校验，孩子说一句「批准」也能批计划。所有 `/dev` 能力路由统一 `requireDevDad`。
+
+**验收**：API 110 项、agent 33 项全绿；`tsc` 三仓通过。真实链路：提需求 → 微信收到方案 → 回「批准」→ 执行 → 改完通知 → 小程序看板可见并可提交；执行中造一个选择问题 → 微信/小程序点选项 → 继续完成。
+
 ## 10. 小程序
 
 新增/改造：

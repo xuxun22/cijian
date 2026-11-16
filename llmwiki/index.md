@@ -10,6 +10,7 @@
 - [print-pipeline](pages/print-pipeline.md) — 打印闭环的状态机、租约、重试、防重打
 - [checkin-pipeline](pages/checkin-pipeline.md) — 每日打卡 v1.4：投递即打卡、AI 指派、预览片 7 天/签名URL播放
 - [assistant-architecture](pages/assistant-architecture.md) — 家庭助手架构：微信回调→ai_tasks 任务平面→agent(opencode+MCP)→API 代发；三种身份与两个队列
+- [dev-plan-approval](pages/dev-plan-approval.md) — 编码通道计划先行 + 小程序开发看板；JWT/企微身份绑定、同毫秒排序坑
 - [env-and-secrets](pages/env-and-secrets.md) — 密钥与口令的存放位置、轮换方法
 
 ## 踩坑（gotcha）

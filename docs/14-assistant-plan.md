@@ -321,7 +321,7 @@ family/assistant/
 - 落盘：lint → 最多 1 新建/2 处改动 → pinned 跳过 → 台账 → 一次 commit+push → 微信通知本人；没改就没文本，不发；
 - 模型：默认 `deepseek/deepseek-flash`（便宜付费），避免和对话抢免费额度，可用 `CIJIAN_AI_REVIEW_MODEL` 覆盖。
 
-**记忆分层**：`<memory kind="preference|fact">` → `preferences.md` / `facts.md`；不写 kind 仍是 `notes/YYYY-MM.md`。偏好与事实写前做完全重复检查；注入时 profile → preferences → facts（近 80 行）→ notes（近 40 行），总长 3500 字。
+**记忆分层**：`<memory kind="preference|fact">` → `preferences.md` / `facts.md`；不写 kind 仍是 `notes/YYYY-MM.md`。偏好与事实写前做完全重复检查；注入时 profile → preferences → facts（近 80 行）→ notes（近 40 行），总长 3500 字。2026-11-18 起做了长短期分层：注入带 `[m-xxxx]` 动态 id，模型用 `<used>` 自报命中 + 关键词兜底，命中写本地日志；每天 23:30 回顾当天对话自动提炼记忆；60 天未命中的 notes/facts 归档到 `archive/`（默认 dry-run），`memory_search` 按需检索长期记忆，归档条目被搜中 ≥2 次自动晋升回现役。
 
 **踩到的坑**
 - **opencode 递归扫描 skills 目录**：归档放在 `skills/.archive/` 时，归档技能照样出现在模型可用列表里（实测列出 `family-dead-20260101`）。归档必须放同级 `skills-archive/`，`_sync_skills` 两个路径一起提交。

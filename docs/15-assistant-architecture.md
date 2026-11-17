@@ -57,7 +57,7 @@ flowchart LR
     subgraph MAC["Mac mini（家）"]
         AG["cijian-agent<br/>launchd 守护"]
         OC["opencode 子进程<br/>对话 / 编码"]
-        MCP["mcp_server.py<br/>32 个能力工具"]
+        MCP["mcp_server.py<br/>33 个能力工具"]
         CUPS["CUPS"]
         PRT["打印机"]
         WIKI["wiki 仓<br/>记忆 + 技能"]
@@ -95,7 +95,7 @@ flowchart LR
 | `ai/runner.py` | opencode 子进程壳：准备 home/workspace、装 MCP、隔离配置、跑、抽文本 | `run`（对话/分析）、`run_dev`（编码） |
 | `ai/devwork.py` | 编码通道工作区：项目白名单、worktree、diff、commit、verify、cleanup | 提交与清理只在 worker 侧调用 |
 | `ai/skills.py` | 技能库：文件读写、lint、使用遥测、改动台账、回滚、归档/pin | 遥测与台账在本地状态目录，不进 wiki |
-| `mcp_server.py` | MCP stdio 服务，32 个工具：31 个走 `/api/assistant/cap/*`，`dev_commits` 读本机白名单仓的 git log（联网搜索已迁到原生 `websearch`） | 不直连数据库；小模型丢参数时用原文兜底 |
+| `mcp_server.py` | MCP stdio 服务，33 个工具：31 个走 `/api/assistant/cap/*`，`dev_commits` 读本机白名单仓的 git log（联网搜索已迁到原生 `websearch`） | 不直连数据库；小模型丢参数时用原文兜底 |
 | `ai/prompts/assistant-chat.md` | 对话人格 + 能力使用规则 + 不谈实现 | 随 `prepare_home` 每次拷进工作区 |
 | `ai/prompts/dev.md` | 编码 agent 人格 + 权限白名单 | 只认 worktree，禁止 commit/push/网络 |
 
@@ -183,7 +183,7 @@ sequenceDiagram
 
 ### 4.2 对话里的能力调用与「worker 兜底」
 
-31 个能力工具分六组（技能 8 个是本地文件操作，其余走 `/api/assistant/cap/*`；`dev_commits` 读本机 git log；联网搜索不是 MCP 工具，走 OpenCode 原生 `websearch`）：
+33 个能力工具分七组（技能 8 个是本地文件操作，`memory_search` 与 `dev_commits` 读本机文件，其余走 `/api/assistant/cap/*`；联网搜索不是 MCP 工具，走 OpenCode 原生 `websearch`）：
 
 | 组 | 工具 |
 |---|---|
@@ -192,6 +192,7 @@ sequenceDiagram
 | 闪光 | `shine_recent` `shine_growth` |
 | 日程 | `reminder_list` `reminder_create` `reminder_cancel` `subscription_get` `subscription_set` |
 | 技能 | `skill_list` `skill_read` `skill_write` `skill_delete` `skill_stats` `skill_history` `skill_restore` `skill_pin` |
+| 记忆 | `memory_search`（只查长期/归档记忆；现役记忆直接注入对话） |
 | 编码 | `dev_task` `dev_approve` `dev_continue` `dev_status` `dev_board` `dev_submit` `dev_discard` `repo_add` `repo_approve` `dev_commits` |
 
 联网搜索用 OpenCode 原生 `websearch` 工具：插件 `opencode-search-plugin` 提供，provider 是 AnySearch 中文源（`zone=cn`、`language=zh-CN`、最多 5 条），由 `runner.install_mcp` 写进隔离配置（全局插件不进助手环境）。小模型有时不调 `websearch` 就直接回「查不到/不确定」：worker 用 `_needs_search_retry` 判断公开/实时问题，追加通用提示重试一次；不按天气/新闻分领域，也不绕过模型直接答。
@@ -390,6 +391,12 @@ flowchart TB
 - 写入口：`<memory kind="preference|fact">…</memory>`，不写 kind 就是流水；API 把 `kind` 透传给 `assistant.wiki.write`；
 - 偏好与事实写之前做完全重复检查，重复直接返回 `duplicate`，不产生提交；
 - 注入顺序：`profile.md` → `preferences.md` → `facts.md`（最近 80 行）→ `notes`（最近 40 行），总长截 3500 字。
+
+**长短期分层（2026-11-18）**：
+- 注入时每行动态加 `[m-xxxx]`（内容 sha1 前 6 位），模型用到哪条就输出 `<used>m-xxxx</used>`；worker 剥掉标记并写本地 `memory-hits.log`（追加日志，worker 与 MCP 并发安全）。关键词二元词重合 ≥2 作为弱信号兜底。
+- 每天 23:30 后 `_memory_review_loop` 读本地对话历史（`chat-history/YYYY-MM.log`，14 天滚动），提炼 ≤5 条候选写 wiki（`assistant-memory-review`）。
+- 每周维护：notes/facts 行 60 天未命中 → `archive/notes.md` / `archive/facts.md`；preferences/profile 永不归档；默认 dry-run 只记日志。归档行 30 天内被 `memory_search` 搜中 ≥2 次自动晋升回现役。
+- 长期检索：MCP `memory_search`（只读 wiki，二元词打分 top 5），提示词要求「问很久以前的事/当前记忆没有」才调用。
 
 ### 4.8 定时与提醒
 

@@ -289,6 +289,10 @@ family/assistant/
 
 **看板**：`GET /dev/board?project=&days=14` → 按「在改 / 改完等确认 / 已提交 / 没改成」分组（本人的、近 14 天，时间转北京时间，标题截 40 字）。对话侧对应 `dev_board` 工具，以及 worker 的 `_board_reply` 兜底——小模型遇到清单类问题经常干脆不调工具，所以这类固定格式的问答由 worker 直接查 API 生成，稳定且省一次模型调用。
 
+**最近提交**：`dev_commits` 工具读本机 `repos.json` 白名单仓的 `git log`（默认 7 天，只出标题/作者/日期，永不出 diff；家庭 wiki 不在白名单里查不到）。看板只记录走微信编码通道的任务，爸爸直接在本机 opencode 改的提交也靠这个工具对家人可见（2026-11-18 打通两渠道的第一步）。
+
+**提交上报（三端可见）**：agent 每小时把白名单仓近 7 天的提交幂等上报到 API（`POST /api/agents/dev/activity`，UNIQUE(repo,hash) 去重），存 `dev_activity` 表；小程序开发页通过 `GET /api/assistant/dev/activity`（仅爸爸）显示「最近提交」卡片。微信对话用 `dev_commits` 实时查本机 git，小程序看板上报延迟最多 1 小时；两处都只出标题，不含 diff。
+
 **「提交/算了」也走 worker 兜底**（`_decide_reply`）：一个词的确定指令不再依赖模型；挑「最近一条改完了等人定」的任务，已提交/在改/没改成各有各的回话；「算了」还要求最近聊过编码结果，避免别的语境被误伤。
 
 **踩到的坑：能力工具在隔离配置下全丢**（本轮最大问题）

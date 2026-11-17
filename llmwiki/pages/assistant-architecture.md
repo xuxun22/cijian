@@ -37,7 +37,9 @@
 - 回合后回顾（`assistant.skill.review`）：纠正词即时触发 + 每天 21:40 兜底；模型只出 JSON，
   lint/写盘/台账/commit/通知都在 worker；没改不发；回顾模型用 `deepseek/deepseek-flash`，
   避免和对话抢免费额度（见 [gotcha-opencode-free-quota](gotcha-opencode-free-quota.md)）；
-- 记忆三层：`preferences.md`（全量注入）/ `facts.md`（近 80 行）/ `notes/YYYY-MM.md`（近 40 行）。
+- 记忆三层：`preferences.md`（全量注入）/ `facts.md`（近 80 行）/ `notes/YYYY-MM.md`（近 40 行）；
+  2026-11-18 起加长短期分层（命中观测 + 60 天归档 + `memory_search` 按需检索 + 晋升），
+  详见 [memory-layers](memory-layers.md)。
 
 ## 查证入口
 

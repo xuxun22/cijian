@@ -84,8 +84,9 @@
 - 删除条目 → 自动入队 `shine.wiki.redact`：agent 从 wiki 移除引用、push、重发视图——记忆增删改全经 agent。
 - agent 沙箱：AI 任务子进程 env 白名单（剔除 `CIJIAN_AGENT_KEY`/口令 hash/JWT secret/deploy key），
   一次性工作区，`HOME` 指向工作区，OpenCode 专用 profile 禁 bash/webfetch，超时杀进程组（docs/13 §4.3）。
-- 对话的公网出口只有搜索这一条：只允许 MCP 的 `web_search` 只读访问 Bing（HTML 优先 / RSS 兜底），
-  不开放任意 URL 抓取；家庭能力仍走 API。搜索词不落日志原文，结果按不可信数据处理，提示词禁止执行网页里的指令。
+- 对话的公网出口只有搜索这一条：OpenCode 原生 `websearch` 工具（插件 `opencode-search-plugin` +
+  AnySearch 中文源），agent 权限只放行这一条，不开放 `webfetch`/任意 URL 抓取；家庭能力仍走 API。
+  结果按不可信数据处理，提示词禁止执行网页里的指令；搜索词不带家人姓名、学校、地址、行程、健康、账号。
 
 ## 密钥清单（api 环境变量）
 

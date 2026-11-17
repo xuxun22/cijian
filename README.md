@@ -29,19 +29,25 @@ docs/
 ├── 05-data-model.md         SQLite 模式 / 文件存储 / TTL 策略
 ├── 06-security.md           鉴权 / 密钥 / 传输 / 上传安全
 ├── 07-deploy-cicd.md        各仓部署与 CI/CD 手册
-├── 09-miniprogram-plan.md   微信小程序支持计划（M-mp-1~3 已实现）
-├── 10-checkin-plan.md       每日打卡（投递即打卡，M-C1~C5）
+├── 09-miniprogram-plan.md   微信小程序支持计划
+├── 10-checkin-plan.md       每日打卡（投递即打卡）
 ├── 11-checkin-usage.md      打卡使用说明
-├── 12-shine-plan.md         看见闪光 · 产品与 UX（AI 执行见 13）
-├── 13-ai-agent-plan.md      Agent AI 任务平面 + 家庭 Wiki 记忆层
+├── 12-shine-plan.md         看见闪光 · 产品与 UX
+├── 13-ai-agent-plan.md      Agent AI 任务平面
+├── 14-assistant-plan.md     家庭助手（微信对话 / 提醒 / 技能 / 记忆 / 编码通道）
+├── 15-assistant-architecture.md  助手架构与排障
 ├── adr/                     架构决策记录 ADR-001 ~ 009
-├── llmwiki/                 # 开发经验维基（LLM 维护，Karpathy 模式）
-│   ├── SKILL.md               # skill 定义（已装到 ~/.config/opencode/skill/llmwiki/）
-│   ├── index.md · log.md      # 条目目录 + 时间线
-│   └── pages/                 # 总览 / 部署实录 / 打印管线 / 踩坑记录
-├── repos.yaml               代码仓清单（建仓脚本的数据源）
-├── scaffold/                各仓最小骨架（README + CI，无业务逻辑）
-├── scripts/bootstrap-repos.sh 按 repos.yaml 自动建仓并推送
+└── research/                调研素材
+
+llmwiki/                     开发经验维基（LLM 维护，Karpathy 模式，本仓根目录）
+├── HOME.md                    使用说明
+├── index.md · log.md          条目目录 + 时间线
+└── pages/                     总览 / 部署实录 / 打印管线 / 踩坑记录 / 记忆分层
+
+.opencode/skill/llmwiki/     OpenCode skill 定义（同时装到 ~/.config/opencode/skill/llmwiki/）
+repos.yaml                   代码仓清单（建仓脚本的数据源）
+scaffold/                    各仓最小骨架（README + CI，无业务逻辑）
+scripts/bootstrap-repos.sh   按 repos.yaml 自动建仓并推送
 ```
 
 ## 建仓（一次性）
@@ -56,15 +62,18 @@ gh auth login                    # 前提：GitHub CLI 已登录
 ## 里程碑状态
 
 - [x] Phase 1 · 文档仓改造 + 全套文档
-- [x] Phase 2 · bootstrap 建三个代码仓
-- [x] M1 鉴权 · [x] M2 上传+任务(API) · [x] M3 打印闭环 · [ ] M4 状态页(前端) · [x] M5 运维收尾(API)
+- [x] Phase 2 · bootstrap 建代码仓
+- [x] M1 鉴权 · M2 上传+任务(API) · M3 打印闭环 · M5 运维收尾(API)
 - [x] 初始部署（api 上线 + 本机 agent 常驻 + E2E 出纸，2026-10-21/22）
-- [x] M-C1~C4 每日打卡（api/agent/网页/小程序，2026-11-05/06）；M-C5 试运行中
-- [ ] **进行中：看见闪光 + Agent AI 任务平面**（M-S1/M-B1 文档阶段 → M-B0 spike → M-B1..B5 实施 → M-B6 试运行；见 docs/12、13）
+- [x] 每日打卡（api/agent/网页/小程序）
+- [x] 看见闪光 + Agent AI 任务平面
+- [x] 家庭助手：微信对话、提醒/订阅、技能库、家庭记忆（长短期分层）、编码通道与看板
+- [x] 网页与小程序工作台（打印 / 打卡 / 闪光 / 开发看板）
+- [ ] 持续项：助手试运行观察、密钥轮换、家庭 onboarding
 
 ## 写文档的规矩
 
 - 改接口先改 `04-api-contract.md`，改数据先改 `05-data-model.md`，然后才是代码
 - 新的架构取舍 → 新增一条 ADR（一页纸：背景 / 决策 / 后果）
-- **开发/测试中踩的坑 → 沉淀进 `llmwiki/`**（OpenCode skill `llmwiki` 会引导：开工先查、解决必记）
+- **开发/测试中踩的坑 → 自动沉淀进 `llmwiki/`**（OpenCode skill `llmwiki`：开工先查、收尾自动写条目并定期整理，不需要人工提醒）
 - 里程碑完成 → 在 `00-execution-plan.md §4` 打 ✔ 并在代码仓合入

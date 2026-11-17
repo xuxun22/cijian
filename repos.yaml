@@ -21,3 +21,8 @@ repos:
     visibility: private
     description: 此间任务守护进程（Python）—— 拉取任务并执行（打印），纯出站
     source: ""
+
+  - name: cijian-mp
+    visibility: private
+    description: 此间微信小程序（原生 TypeScript）—— 打卡 / 闪光 / 打印 / 开发看板
+    source: ../cijian-mp

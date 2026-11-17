@@ -196,7 +196,7 @@ family/assistant/
 
 打印跨两轮：`print_preview` 把摘要与凭条（10 分钟）暂存在 `app_state.print_intent:<本人>`，用户回「打」时 `print_submit` 不传凭条也能提交，用过即清。对话任务还带最近 6 条消息（`recent_chat`），让「先发摘要、再回打」接得上。
 
-模型：`opencode/mimo-v2.6-flash-free`。原来的 deepseek-v4.1-flash 实测三次里只有一次真的调工具，会回「工具没连上」；mimo 连续两次都调，答复也更稳。
+模型：`zai-coding-plan/glm-5.3-flash`（2026-11-18 切换）。选型史：deepseek-v4.1-flash 三次里只有一次真的调工具；mimo 免费版调工具稳但日额度约 8 小时窗口，日常一撞顶对话就整体失败（微信端只看到「这次没想好，等下再问我一次」）；glm-5.3-flash 实测调 `websearch`、隐私搜索词处理都稳，切换后微信天气链路 13.5s 正常返回。
 
 ## 9.3 对话区与技能（P0，2026-11-13）
 

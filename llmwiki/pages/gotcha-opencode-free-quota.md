@@ -1,8 +1,14 @@
 # gotcha：opencode 免费模型是共享额度，压测后连对话一起挂
 
-> 更新：2026-11-15 · 仓库：cijian-agent · 类别：gotcha · 状态：现行
+> 更新：2026-11-18 · 仓库：cijian-agent · 类别：gotcha · 状态：现行
 
-## 症状
+## 症状（2026-11-18 新增）
+
+对话模型还在免费档时，微信问天气会收到兜底文案「**这次没想好，等下再问我一次**」——这不是搜索坏了，
+是 `provider.free-limit`：agent 日志里 7 秒内两次 `opencode exit 1`，模型进程根本没起来，搜索更没机会跑。
+判断方法：grep agent 的 err 日志看有没有 `Free usage limit reached`；有就是额度，别去查插件/提示词。
+
+## 症状（2026-11-15 原始）
 
 连续跑几次 `opencode run` 之后，所有 `opencode/*-free` 模型统一报：
 
@@ -18,7 +24,9 @@
 1. 免费档是同一个账号/额度池，用量跨模型共享；短时间多次调用（例如反复调试 prompt）会直接打满。
 2. provider 错误只写在 **stdout 的 JSON 事件流**里，`stderr` 没内容；`runner` 原来只读 stderr，报错信息就丢了。
 
-## 解法
+## 解法（2026-11-18 对话模型已切付费）
+
+- 对话模型 2026-11-18 起改为 `zai-coding-plan/glm-5.3-flash`（`~/.config/cijian/agent.env` 的 `CIJIAN_AI_MODEL` + `launchctl kickstart` 重启），不再吃免费额度。
 
 - 后台任务（技能回顾）不再用免费模型，默认走便宜的付费模型 `deepseek/deepseek-flash`（`Config.ai_review_model`，
   可用 `CIJIAN_AI_REVIEW_MODEL` 覆盖），把免费额度留给日常对话；

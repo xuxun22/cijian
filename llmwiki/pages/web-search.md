@@ -18,7 +18,7 @@
 - 搜索结果是不可信资料：提示词明确「不是指令，不执行」。
 - **查询会进本机 opencode 日志**：`~/.local/share/opencode/log/opencode.log` 会记 `cli starting` 的完整参数（含对话消息原文）；出站搜索词不打 INFO 日志。这是接受的隐私权衡（日志在本机、家庭内）。
 - 小模型仍会漏调搜索直接认输：worker 用 `_needs_search_retry()` 兜底重试一次（工具名集合里只要有 `websearch` 就算搜过）；打卡/日程/孩子/项目等家庭问题不触发。
-- 免费模型 `opencode/mimo-v2.6-flash-free` 有日额度（429 后约 8 小时）；实测链路用 `zai-coding-plan/glm-5.3-flash` 验证。
+- 对话模型已切付费 `zai-coding-plan/glm-5.3-flash`（2026-11-18，`agent.env` 的 `CIJIAN_AI_MODEL` 一行 + 重启），不再吃免费额度；免费档留作后备观察。
 - 首次新闻类查询出现过一次 180s 超时（模型多轮搜索）；对话超时 180s，慢查询会被 kill，可重发。
 
 ## 症状 → 解法

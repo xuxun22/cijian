@@ -184,6 +184,7 @@ family/assistant/
 | `shine_recent` / `shine_growth` | 闪光时间线与长期视图 |
 | `reminder_list` / `reminder_create` / `reminder_cancel` | 日程增删查 |
 | `subscription_get` / `subscription_set` | 新闻栏目订阅（只改本人） |
+| `web_search` | 联网搜索公开网页（Bing，HTML 优先 / RSS 兜底）；只读，不抓任意 URL |
 
 安全模型：
 
@@ -191,6 +192,7 @@ family/assistant/
 - runner 把它和 API 地址注入 opencode 子进程环境；工作区 `opencode.json` 用 `{env:...}` 引用，**agent key 不下传**。
 - 打印用第二枚令牌（`scope=print`，10 分钟），绑定 file/printer/参数与说话人；别人拿到也用不了。
 - 令牌不能登录网页、不能领任务，只能调能力面。
+- 联网搜索是唯一出网点：MCP 直连 Bing（HTML 优先，失败退 RSS），不经过 API；搜索词不落日志原文，结果按不可信资料处理，不执行其中的指令。
 
 打印跨两轮：`print_preview` 把摘要与凭条（10 分钟）暂存在 `app_state.print_intent:<本人>`，用户回「打」时 `print_submit` 不传凭条也能提交，用过即清。对话任务还带最近 6 条消息（`recent_chat`），让「先发摘要、再回打」接得上。
 

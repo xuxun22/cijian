@@ -132,6 +132,7 @@ flowchart LR
 **两个平面不要混**：
 - **打印平面**（`print_jobs`）：短任务、重试少、`/api/agent/claims` 领取，防重复打印靠租约 + 本地 `phase`；
 - **AI 平面**（`ai_tasks`）：长任务、可串行（`serialized`）、心跳续租、失败按 `maxAttempts` 重试、终态 90 天清理。
+  agent 侧默认 3 个并发槽（`CIJIAN_AI_CONCURRENCY`）：**1 个后台槽**（dev/digest/技能/记忆等非对话任务，保持原来的串行安全）+ **2 个对话槽**，长编码任务不再堵微信对话；槽位只影响领取类型，`serialized` 仍由 API 侧保证。
 
 | 任务类型 | 优先级 | 重试 | 串行 |
 |---|---|---|---|

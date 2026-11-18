@@ -13,7 +13,7 @@
 
 ## 机器与网络
 
-- **服务器**：腾讯云 `VM-4-9-ubuntu`，公网 43.173.111.191，Tailscale `100.94.198.50`（旧机 vm-0-4-ubuntu 已于 2026-11-18 销毁）
+- **服务器**：腾讯云 `VM-4-9-ubuntu`，公网 43.173.111.191，Tailscale `100.78.101.104`（2026-11-18 reimage 后）（旧机 vm-0-4-ubuntu 已于 2026-11-18 销毁）
 - **公网端口**：80/443 开（机器上独立 Caddy），22 关闭 → SSH/CI 均走 Tailscale
 - **Caddy**：`/etc/caddy/Caddyfile`：`api.whereami.cn, 43-173-111-191.sslip.io → 127.0.0.1:8787`
 - **Mac mini**（本机）：launchd 服务 `com.cijian.agent`，CUPS 打印机 `Mi_All_in_One_Inkjet_Printer`

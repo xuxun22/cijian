@@ -118,12 +118,12 @@ sudo /opt/cijian-agent/install.sh --tag v0.2.0   # 下载新 Release 并 systemc
 | 项 | 值 |
 |---|---|
 | 公网 IP | `43.173.111.191`（sslip：`https://43-173-111-191.sslip.io`） |
-| Tailscale | 节点 `cijian-api` = `100.94.198.50`（`tailscale up --ssh --accept-dns=false`） |
+| Tailscale | 迁移时节点 `cijian-api` = `100.94.198.50`；**2026-11-18 reimage 后为 `vm-4-9-ubuntu` = `100.78.101.104`** |
 | 系统 | Ubuntu 24.04.4，2C/2G/50G，Asia/Shanghai |
 | 代码 | `/opt/cijian-api/app`，deploy key（read-only，标题 `cijian-api-2`） |
 | 反向代理 | `/etc/caddy/Caddyfile`：`api.whereami.cn, 43-173-111-191.sslip.io → 127.0.0.1:8787`；全局 `acme_ca` 钉死 Let's Encrypt **生产** |
 | 兜底 | `cijian-deploy.timer`（5 分钟自拉取，与旧机同一份 `deploy.sh`） |
-| Actions secrets | `DEPLOY_HOST=100.94.198.50` / `DEPLOY_USER=ubuntu` / `DEPLOY_SSH_KEY`（新机 `~/.ssh/github_actions`），`workflow_dispatch` 实测 22s 成功 |
+| Actions secrets | `DEPLOY_HOST=100.78.101.104`（reimage 后已更新） / `DEPLOY_USER=ubuntu` / `DEPLOY_SSH_KEY`（新机 `~/.ssh/github_actions`），`workflow_dispatch` 实测 22s 成功 |
 
 迁移步骤（可复用）：
 

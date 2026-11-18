@@ -1,5 +1,20 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-18] deploy | 生产机 reimage 完成（干净系统，Hermes 清除）
+
+备份 5.8MB（数据+env+配置+密钥，integrity ok）→ 爸爸重装 Ubuntu 24.04 并接入 Tailscale
+（新 IP 100.78.101.104，公网 IP 43.173.111.191 保留）→ 重建 docker/Caddy/deploy timer/authorized_keys
+→ 恢复数据与 env → `DEPLOY_HOST` secret 更新。验证：HTTPS health 200、证书签发、CI 部署 28s、
+agent 心跳恢复、数据计数一致（20 提醒/2 成员/200 消息/123 任务）。Hermes 不再恢复。详见
+[cijian-api-deploy](pages/cijian-api-deploy.md) §reimage 实录。
+
+## [2026-11-18] deploy | 生产机 Hermes gateway 已停（无运行时依赖）
+
+生产机（VM-4-9-ubuntu）的用户级 `hermes-gateway.service` 从 11-11 起常驻（连同 weixinpay/lightclaw
+插件），但 `hermes cron list` 为空、无定时任务。已 `systemctl --user disable --now` 停用并取消开机自启
+（Linger=yes 下会随登录自启，必须先 disable）。数据 `~/.hermes` 4.4GB 保留，待后续 reimage 再清。
+验证：api 健康、cijian-deploy.timer 正常、微信对话 7.7s 完成。现行架构（api/agent/site/mp）不调用 Hermes。
+
 ## [2026-11-18] deploy | 旧服务器销毁，文档纠正为生产机 VM-4-9-ubuntu（43.173.111.191）
 
 爸爸在腾讯云销毁旧机 vm-0-4-ubuntu（43.159.141.66 / Tailscale 100.127.52.69）。生产一直是

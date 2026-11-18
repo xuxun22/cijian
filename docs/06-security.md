@@ -58,9 +58,9 @@
 - Agent → api 同样走该 HTTPS 域名（python requests 校验公共 CA，不 `verify=False`）
 - 服务器防火墙：方案 A/B 只开 443（22 限源 IP）；方案 C 可不开任何入站端口
 
-> **当前部署（2026-11-18）**：生产在 `VM-4-9-ubuntu`（公网 `43.173.111.191`，Tailscale `100.94.198.50`），
+> **当前部署（2026-11-18）**：生产在 `VM-4-9-ubuntu`（公网 `43.173.111.191`，Tailscale `100.78.101.104`（reimage 后；旧 IP 100.94.198.50）），
 > 独立 Caddy 终结 TLS，站点 `https://api.whereami.cn`；旧机 `vm-0-4-ubuntu`（43.159.141.66）已于 2026-11-18 销毁。
-> agent→api 走 `https://api.whereami.cn`（公共 CA 校验）；内网可走 Tailscale `http://100.94.198.50:8787`。
+> agent→api 走 `https://api.whereami.cn`（公共 CA 校验）；内网可走 Tailscale `http://100.78.101.104:8787`。
 
 ## 日志与审计
 

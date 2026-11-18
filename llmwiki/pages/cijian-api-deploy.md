@@ -14,7 +14,7 @@
 | 自愈 | `cijian-deploy.timer` 5 分钟 `git pull --ff-only` + `docker compose up -d --build` |
 | CI/CD | Actions secrets `DEPLOY_HOST/USER/SSH_KEY` 已指向新机；`workflow_dispatch` 22s 通过 |
 
-旧机 `43.159.141.66`（vm-0-4-ubuntu / 100.127.52.69）保留为回滚退路，24h 后可停。
+旧机 `43.159.141.66`（vm-0-4-ubuntu / 100.127.52.69）**已于 2026-11-18 销毁**（当时保留作回滚退路，确认迁移稳定后清理）。
 
 ## 迁移必做
 

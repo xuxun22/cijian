@@ -58,10 +58,9 @@
 - Agent → api 同样走该 HTTPS 域名（python requests 校验公共 CA，不 `verify=False`）
 - 服务器防火墙：方案 A/B 只开 443（22 限源 IP）；方案 C 可不开任何入站端口
 
-> **初始部署现状（2026-10-21）**：服务器实测在**硅谷区**（无需备案）。正式域名 DNS 未配，
-> 暂以 `https://43-159-141-66.sslip.io`（sslip.io 通配解析 → 43.159.141.66，Caddy ACME 真证书）对外，
-> Caddy 站点块已同时包含 `api.whereami.cn`（DNSPod 加 A 记录后自动生效）。
-> agent→api 亦可走 Tailscale 内网 `http://100.127.52.69:8787`（WireGuard 端到端加密，明文 HTTP 可接受）。
+> **当前部署（2026-11-18）**：生产在 `VM-4-9-ubuntu`（公网 `43.173.111.191`，Tailscale `100.94.198.50`），
+> 独立 Caddy 终结 TLS，站点 `https://api.whereami.cn`；旧机 `vm-0-4-ubuntu`（43.159.141.66）已于 2026-11-18 销毁。
+> agent→api 走 `https://api.whereami.cn`（公共 CA 校验）；内网可走 Tailscale `http://100.94.198.50:8787`。
 
 ## 日志与审计
 

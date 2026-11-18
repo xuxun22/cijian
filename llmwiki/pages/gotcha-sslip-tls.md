@@ -1,6 +1,6 @@
 # howto：DNS 未配时的即时 TLS（sslip.io）与正式域名接线清单
 
-> 2026-10-21 · 仓库：cijian-api · 类别：howto · 状态：现行
+> 2026-10-21 · 仓库：cijian-api · 类别：howto · 状态：已过时（2026-11-18 旧机销毁；正式域名早已生效，现行见 [cijian-api-deploy](cijian-api-deploy.md)）
 
 ## 背景
 

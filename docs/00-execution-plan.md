@@ -177,6 +177,6 @@ Agent 侧（每地点独立 Agent Key）
 ## 8. 立即行动项
 
 1. ✅ Phase 2 建仓 + M1–M3/M5（API 侧）实现 + 初始部署 + 打印闭环 E2E（均已完成）
-2. 你：DNSPod 给 whereami.cn 加记录——主机 `api`，类型 `A`，值 `43.159.141.66`（加完 api.whereami.cn 即生效，Caddy 自动签证书）
+2. 你：DNSPod 给 whereami.cn 加记录——主机 `api`，类型 `A`，值 `43.173.111.191`（旧机 43.159.141.66 已于 2026-11-18 销毁；加完 api.whereami.cn 即生效，Caddy 自动签证书）
 3. 你（可选，启用 CI/CD 自动部署）：Tailscale 管理台生成 auth key → 仓库 Secret `TS_AUTHKEY`；其余 DEPLOY_* secrets 已预配好，最后把 Variables `DEPLOY_ENABLED` 设为 `true`
 4. 我：M2 前端工作台 + M4 状态页（cijian-site UI）

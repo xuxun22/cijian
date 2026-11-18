@@ -6,7 +6,7 @@
 
 - [overview](pages/overview.md) — 此间系统全景：四个仓、服务器、域名、agent、数据流
 - [engineering-standards](pages/engineering-standards.md) — **Harness 规则：每仓必跑测试、lint/类型规则、产品层判定（用户友好/风格统一/产品语义）**，SKILL.md 内置强制清单
-- [deployment-tencent-vm](pages/deployment-tencent-vm.md) — 腾讯云 vm-0-4-ubuntu 初始部署实录与拓扑
+- [deployment-tencent-vm](pages/deployment-tencent-vm.md) — 旧机 vm-0-4-ubuntu 部署实录（2026-11-18 已销毁，仅供历史参考）
 - [print-pipeline](pages/print-pipeline.md) — 打印闭环的状态机、租约、重试、防重打
 - [checkin-pipeline](pages/checkin-pipeline.md) — 每日打卡 v1.4：投递即打卡、AI 指派、预览片 7 天/签名URL播放
 - [assistant-architecture](pages/assistant-architecture.md) — 家庭助手架构：微信回调→ai_tasks 任务平面→agent(opencode+MCP)→API 代发；三种身份与两个队列

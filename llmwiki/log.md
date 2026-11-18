@@ -1,5 +1,13 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-18] deploy | 旧服务器销毁，文档纠正为生产机 VM-4-9-ubuntu（43.173.111.191）
+
+爸爸在腾讯云销毁旧机 vm-0-4-ubuntu（43.159.141.66 / Tailscale 100.127.52.69）。生产一直是
+VM-4-9-ubuntu（43.173.111.191 / 100.94.198.50，`api.whereami.cn`），旧机残留的 Hermes gateway
+（AI 日报 08:07、产业专刊周一 08:37，和现行定时任务撞车）与 cijian-api 副本随销毁一并消失。
+已更新 docs/00、06、07、CADDY.md、deploy.yml 注释，以及 llmwiki overview / deployment-tencent-vm /
+cijian-api-deploy / gotcha-sslip-tls / gotcha-mp-domain-check 中的旧机引用。
+
 ## [2026-11-11] gotcha | whereami.com 是第三方网站；WW_verify 验证文件挂 cijian-site/public/
 
 需求里的 `whereami.com` 系笔误（第三方 Cloudflare 站点，仓库 grep 零命中）；我们的域名为

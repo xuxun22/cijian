@@ -99,14 +99,14 @@ sudo /opt/cijian-agent/install.sh --tag v0.2.0   # 下载新 Release 并 systemc
 2. 本仓 `docs/` 同步更新（契约变更先改 04/05）
 3. 在 00-execution-plan §4 表格标注 ✔
 
-## 初始部署实录（2026-10-21，vm-0-4-ubuntu）
+## 初始部署实录（2026-10-21，vm-0-4-ubuntu · 历史，旧机已于 2026-11-18 销毁）
 
 - Docker 29.1.3 + Compose 2.40.3（apt: docker.io + docker-compose-v2）；ubuntu 已入 docker 组
 - 私有仓拉取：服务器 deploy key（`~/.ssh/cijian_deploy`，只读，gh api 注册）；仓库内 `core.sshCommand` 指向它
 - **宿主机 80/443 被 ACLI 共享 Caddy 占用** → api 容器仅发布 `127.0.0.1:8787`，
   经 `/etc/caddy/acli.d/sites/cijian-api.caddy` 反代；改动后 `caddy validate` + `systemctl restart caddy`
 - env 文件为 `cijian.env`（**不是** `.env`，避免 compose 默认插值源混淆）；argon2 hash 的 `$` 写 `$$`
-- 公网入口：`https://43-159-141-66.sslip.io`（即刻可用）；`api.whereami.cn` 待 DNSPod A 记录（值 43.159.141.66）
+- 公网入口（当时）：`https://43-159-141-66.sslip.io`；后切 `api.whereami.cn`（2026-11-11 迁移到新机）
 - 公网 22 关闭：CI/CD 部署需 Tailscale（deploy.yml 已支持 TS_AUTHKEY）；初始部署由 Mac mini 经 Tailscale SSH 手工完成
 - 已注册打印机：`p_macmini`（Mac mini，launchd 常驻 `com.cijian.agent`，CUPS：Mi_All_in_One_Inkjet_Printer）
 - 端到端验证：登录 → 上传 PNG → 建任务 → agent 领取 → CUPS 出纸（17s）→ done，事件序列完整

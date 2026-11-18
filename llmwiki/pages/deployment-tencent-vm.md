@@ -1,6 +1,6 @@
-# 腾讯云 vm-0-4-ubuntu 部署实录
+# 腾讯云 vm-0-4-ubuntu 部署实录（已过时：旧机 2026-11-18 销毁）
 
-> 2026-10-21 · 类别：howto · 仓库：cijian-api · 状态：现行
+> 2026-10-21 · 类别：howto · 仓库：cijian-api · 状态：已过时（历史记录；现行部署见 [cijian-api-deploy](cijian-api-deploy.md)）
 
 ## 服务器画像
 

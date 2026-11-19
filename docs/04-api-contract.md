@@ -184,6 +184,7 @@ GET /api/checkin/records?project_id=cp_erhu&from=2026-11-01&to=2026-11-05
 
 GET /api/checkin/stats?project_id=cp_erhu&days=30
 → 200 { "streak": 12, "done_days": 18, "days": 30,
+        "completion_rate": 0.857,                       // 已完成应打日 / 应打日（0~1）
         "practice_seconds": 45600,                      // Σ duration（展示用）
         "history": [ {"date":"2026-11-05","status":"done"} , … ] }
 

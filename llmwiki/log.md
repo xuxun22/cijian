@@ -174,6 +174,11 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-19] overview | get 产品线接管调研：get-dev 已停摆，cijian dev 通道可接管，一期方案出台
+
+9 仓全在自建 GitLab（SSH 可达）；cijian 侧三缺口：verify 只会 npm、无 push/MR、无 GitLab 客户端。
+方案 docs/16-get-takeover-plan.md（gate→intake 桥、repos.json 扩展、双 prompt、wiki 知识装配）。
+
 ## [2026-11-16] howto | 编码通道改成「计划先行」+ 小程序开发看板
 
 planning → waiting_plan → execute → waiting_input → done；新增 dev-plan 只读 agent、`.cijian-ask.json` 提问协议、

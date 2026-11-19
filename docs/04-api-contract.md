@@ -443,6 +443,15 @@ token = base64url(`media_id.exp`) + HMAC-SHA256（同 `FILE_URL_SECRET`），有
 
 接口不兼容变更：先在本文档加「v1.x 变更记录」小节，三仓同步实现后再合入；家庭规模不引入 URL 版本号。
 
+## v1.6 变更记录（2026-11-19 · 手动打卡项目）
+
+- 打卡项目 `media_type` 新增 `none`（手动打卡，不投媒体）；项目表单可选「手动打卡」
+- 新增 `POST /api/checkin/records`：手动项目建当日记录（已存在则原样返回，幂等）
+- 新增 `POST /api/checkin/records/:id/cancel`：撤销打卡，仅无媒体的记录可删（有媒体 409）
+- 「完成」判定统一为**当天该项目有记录**（投递打卡仍由媒体自动建记录）；统计口径同步
+- 自动指派（AI 提示 / 唯一未完成）跳过 `media_type=none`，媒体不能被指派到手动项目
+- 部署时幂等种入三个手动项目：`cp_math` 数学口算、`cp_words` 英语单词、`cp_rope` 跳绳（固定 id，重复执行不重复插入）
+
 ## v1.5 变更记录（2026-11-11 · 看见闪光 + Agent AI 任务平面）
 
 - 新增站点侧「看见闪光」接口：entries 创建（**202 异步**，AI 由 agent 完成）/列表/详情/retry/更新（PATCH+POST）/软删（触发 redact）/feedback、`GET /api/ai/tasks/:id` 轮询、`GET /api/shine/growth`（读 agent 发布的视图）、`POST /api/shine/review`、导出（JWT）

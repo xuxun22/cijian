@@ -27,3 +27,6 @@ Agent 用 `opencode run` 作为 AI 任务执行器的全部实测事实（看见
 - `--agent xxx` 报不存在 → 检查目录名是不是 `agents`；frontmatter 是否合法 YAML。
 - 输出多了 Markdown 围栏 → system prompt 里要有「只输出 JSON，不要 Markdown，不要解释」。
 - 想限制步数 → frontmatter `steps: N`（最后一步会收工具强制总结）。
+- **权限规则有序、后匹配者胜——窄放行必须排在宽禁止之后**：`python3 *` deny 会吃掉
+  之前放的 `python3 -m *` allow；正确顺序是先宽 deny 再窄 allow（get 版 profile 踩过，
+  dev-get.md 的「窄放行必须放在对应宽 deny 之后」段是范本）。

@@ -1,6 +1,6 @@
 # get 产品线接管调研（get-dev → cijian-agent）
 
-> 日期：2026-11-18 · 仓库：cijian（本文）/ get-dev · 类别：overview · 状态：现行（一期设计已出）
+> 日期：2026-11-18 · 仓库：cijian（本文）/ get-dev · 类别：overview · 状态：现行（**一期已于 2026-11-19 实现，待 E2E**；设计正本 `docs/16-get-takeover-plan.md`，落点见本文「一期落地清单」）
 
 ## 是什么
 
@@ -24,6 +24,36 @@
   2026-11-19 建）：交互会话在 get-dev 目录里维护 wiki 用（查/记/lint/桩整备，英文条目、
   log 带 HH:MM）。它只进交互会话——自动 dev 通道的一次性 workspace 不装 skill（P9 隔离
   不变）。
+
+## 一期落地清单（2026-11-19，全部 harness 绿）
+
+- **cijian-api**：`dev_tasks.source_key/source_url`（v1.8 迁移 + 唯一部分索引）；
+  `POST /api/agents/dev/intake`（X-Agent-Key，幂等建单，默认 requester=dad，issue≤5/次、
+  description 截 4000）；dev.task 三个 payload 构造点带 source 字段；accept payload 补
+  plan/tests/summary（MR 描述用）。测试 `test/dev-intake.test.ts`（7 项，全套 126 绿）。
+- **cijian-agent**：`devwork.ProjectSpec`（repos.json 扩展字段：plan_agent/dev_agent/model/
+  verify_timeout/verify/setup/release_branches/push/knowledge/wiki_repo）；
+  `verify(per_repo=…)` 命令表优先、npm 回退；`setup_repos`（npm-ci-gitlab-registry：registry
+  host 从仓库 .npmrc 的 @scope:registry 行自举）；`copy_knowledge`（index/log/concepts/repos
+  → workspace KNOWLEDGE/ + 根 AGENTS.md）；`push_branch` / `deposit_issue_stub`（P4.7 桩）；
+  `reportable_repos`（上报过滤，默认只有 cijian）；`cijian_agent/gitlab.py`（移植：projects
+  分页缓存 / create_draft_mr（Draft: 前缀 + remove_source_branch）/ issue_note）；
+  worker 按 spec 选 profile/model、execute 前 setup、commit→push→MR→wiki 桩。
+  prompts：`dev-plan-get.md` / `dev-get.md`。测试 +14（82 绿）。
+- **get-dev 仓**：`agent/handoff.py`（接单评论 + POST intake + state 标 sent-to-cijian）；
+  agent.sh wake 分支改为 handoff；gitlab.py AGENT_TAG 更名 cijian assistant；AGENTS.md 顶部
+  接管注记。gate 的 launchd 装载与 .env 补齐**未做**（见下）。
+- **机器配置**：`~/.config/cijian/repos.json` 加 get 项目（9 仓 + verify 表 + setup +
+  fast-ray/main + knowledge 指向 ~/get/get-dev/wiki）；agent.env 加了
+  CIJIAN_GITLAB_URL/GROUP（**token 未加**）。
+
+## 剩余阻塞（E2E 前必须）
+
+1. `~/get/get-dev/.env` 在本机**不存在**（原在 RacheldeiMac）：需要 GITLAB_URL/GITLAB_TOKEN
+   + 新增 CIJIAN_API_URL/CIJIAN_AGENT_KEY；
+2. `~/.config/cijian/agent.env` 缺 `CIJIAN_GITLAB_TOKEN`（加后重启 com.cijian.agent）；
+3. 本机装载 `com.getdev.agentpoll` plist；RacheldeiMac 卸载；
+4. cijian-api 部署（推 main 自动上线）后 intake 才可用。
 - **两边架构同构**：worktree 隔离、验证环、llm-wiki、人审门、commit 由 worker。接管 =
   把 get-dev 的触发/知识/验证/MR 四部件搬进 cijian dev 通道。
 

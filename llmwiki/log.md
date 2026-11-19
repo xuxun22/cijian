@@ -174,6 +174,12 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-19] howto | get 接管一期实现落地：intake 端点 / ProjectSpec / gitlab 客户端 / handoff gate
+
+cijian-api 126 测试绿（+intake 7 项）、cijian-agent 82 绿（+14 项）、get-dev gate 改交接模式。
+剩余阻塞：get-dev .env（token）不在本机、agent.env 缺 CIJIAN_GITLAB_TOKEN、launchd 未装、api 未部署。
+新坑：opencode 权限后匹配者胜——窄 allow 必须排在宽 deny 之后（记入 opencode-runner）。
+
 ## [2026-11-19] overview | get 产品线接管调研：get-dev 已停摆，cijian dev 通道可接管，一期方案出台
 
 9 仓全在自建 GitLab（SSH 可达）；cijian 侧三缺口：verify 只会 npm、无 push/MR、无 GitLab 客户端。

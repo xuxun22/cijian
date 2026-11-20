@@ -66,7 +66,8 @@
 
 ```
 date, child_id, mode, headline, evidence, say_this, lighter, ask_back, deeper,
-avoid, observation_prompt, observation_options[3], confidence, evidence_refs[]
+practice_id, practice, practice_source, avoid, observation_prompt,
+observation_options[3], confidence, evidence_refs[]
 ```
 
 **有素材的一天**
@@ -88,6 +89,8 @@ avoid, observation_prompt, observation_options[3], confidence, evidence_refs[]
 再聊深一点：
 「你改的时候，是重新算了一遍，还是换了个方法？」
 
+这次用的方法：心理健康素养——具体描述，不贴标签（OECD 2025, p.17-19）
+
 明天可以留意：
 遇到不会的题，他是先自己试，还是马上叫人？
 ```
@@ -108,6 +111,8 @@ avoid, observation_prompt, observation_options[3], confidence, evidence_refs[]
 「有没有哪一句练了几遍才顺？你当时怎么找到感觉的？」
 
 选一句问就行，不用都问。
+
+这次用的方法：低门槛支持——只问一句，不盘问（OECD 2025, p.19）
 ```
 
 **没有素材的一天**
@@ -128,6 +133,8 @@ avoid, observation_prompt, observation_options[3], confidence, evidence_refs[]
 这时候不用找闪光。可以先说：
 「这次没考好，你心里挺难受的吧。想说的时候，我在。」
 明天再看。
+
+这次用的方法：先倾听再回应（MHFA）（OECD 2025, p.17-18）
 ```
 
 ### 0.5 证据规则
@@ -151,13 +158,58 @@ avoid, observation_prompt, observation_options[3], confidence, evidence_refs[]
 - 同一主题/句式 7 天内不重复；`listen` 不靠数据推断，只由家长输入触发。
 - 每日卡不引用试卷题目原文/图片，只引用科目、单元、错题数、订正数。
 
-**`shine-daily-v2` prompt 要点**
+**`shine-daily-v4` prompt 要点**
 
 输入：日期、孩子称呼/年级、昨日/近 7 天打卡（项目、fields、时长、媒体）、本地试卷（`status=ready` 且已订正）、近 7 天闪光条目、wiki `next_observation`/表达偏好、最近 14 天反馈（说了吗/反应/孩子原话）。
 
-输出：`mode`、`headline`、`evidence`、`say_this`、`lighter`、`ask_back`、`deeper`、`avoid`、`observation_prompt`、`observation_options[3]`、`confidence`、`evidence_refs[]`；一张卡只写一个孩子、最多一件主要的事。
+输出：`mode`、`headline`、`evidence`、`say_this`、`lighter`、`ask_back`、`deeper`、`practice_id`、`avoid`、`observation_prompt`、`observation_options[3]`、`confidence`、`evidence_refs[]`；一张卡只写一个孩子、最多一件主要的事。
 
-硬规则：只使用输入里的事实；没有过程证据就 `notice`，没有素材就 `invite`，家长输入显示难受就 `listen`；不写分数/排名、不比较兄弟姐妹、不推断动机/情绪、不编细节；没有 ≥3 次同类记录不说「进步」；同一主题/句式 7 天内不重复；`say_this` 具体、克制、像家人说话；`ask_back` 与 `deeper` 必须具体到今天的活动，把评价变成孩子自己的归因；不要写「今天有两条记录/打卡显示」这种系统口吻；有媒体时长写「约 N 分钟」，不写「一段」。
+硬规则：只使用输入里的事实；没有过程证据就 `notice`，没有素材就 `invite`，家长输入显示难受就 `listen`；不写分数/排名、不比较兄弟姐妹、不推断动机/情绪、不编细节；没有 ≥3 次同类记录不说「进步」；同一主题/句式 7 天内不重复；`say_this` 具体、克制、像家人说话；`ask_back` 与 `deeper` 必须具体到今天的活动，把评价变成孩子自己的归因；不要写「今天有两条记录/打卡显示」这种系统口吻；有媒体时长写「约 N 分钟」，不写「一段」；`practice_id` 只能从下方最佳实践库/沟通技巧库选一个，且必须与卡片实际做法一致。
+
+**最佳实践映射（OECD 2025）**
+
+> 参考：OECD (2025), *Promoting good mental health in children and young adults: Best practices in public health*, OECD Publishing, Paris. 原文是政策层面的 11 条 best practice；这里只取与亲子日常沟通直接相关的原则，并在卡片上标明出处，不声称原文给出了这些具体句子。
+
+| practice_id | 卡片上写 | 引用 | 用在哪 |
+|---|---|---|---|
+| `mhfa_listen` | 先倾听再回应（MHFA） | p.17-18 | `listen`、孩子有情绪 |
+| `mental_health_literacy` | 心理健康素养——具体描述，不贴标签 | p.17-19 | `praise`、`notice` |
+| `low_threshold` | 低门槛支持——只问一句，不盘问 | p.19 | `notice`、`invite` |
+| `tailored` | 个体化——按孩子的反应调整 | p.19 | 任何模式 |
+| `stable_relationship` | 稳定的亲子关系——日常小仪式 | p.12 | 低强度卡 |
+| `early_help` | 早期识别——留意变化，及时求助 | p.14, p.19 | `invite`、持续低落 |
+| `suicide_prevention` | 自杀预防——认真对待，联系专业帮助 | p.18 | **仅**家长明确提到自伤/自杀/严重危机；强制 `listen`，不写夸赞 |
+
+- 模型只输出 `practice_id`；API 统一映射展示名/引用，避免编造页码。
+- 每张卡只标一条，且必须和卡片实际做的事一致；不为了引用而硬套。
+- 安全兜底：`suicide_prevention` 无论模型给什么 `mode`，API/agent 都强制按 `listen` 处理。
+
+**沟通技巧库（《与青春期和解》，Steinberg）**
+
+> 参考：劳伦斯·斯坦伯格《与青春期和解》家长实用方法指南（家长提供的摘要）。这本书的框架是**权威型养育**：温暖、坚定、坦诚沟通；既不控制一切，也不放任。核心沟通技术如下。引用一条 primary practice，但写法要同时遵守这些技巧。
+
+| practice_id | 卡片上写 | 引用 | 用在哪 |
+|---|---|---|---|
+| `connect_before_correct` | 先连接，再纠正 | §一 | 任何卡；先让孩子感到被看见 |
+| `share_yourself` | 先分享自己，再邀请孩子 | §一.3 | 孩子不太想说时 |
+| `i_message` | 我向信息——描述行为 + 感受 + 影响 | §四.2 | `praise`、`notice`；避免「你总是/从不」 |
+| `stop_interrogation` | 停止审讯式提问——只问一句，不问为什么 | §四.3 | `notice`、`invite`；一次一问 |
+| `side_by_side` | 并排场景——散步/开车时聊 | §四.4 | 想说但面对面难开口时 |
+| `respect_silence` | 尊重沉默——等你想说的时候我都在 | §四.5 | 孩子不想说、`listen` |
+| `repair_relationship` | 冲突修复——先恢复联结，再讲道理 | §六 | 冲突/争吵后的卡 |
+| `stage_autonomy` | 分阶段放权——10-13 给选择，14-18 做顾问 | §五 | 按年龄校准 |
+
+阶段校准（按 `child.birth_year` 估算，不硬套）：
+
+| 年龄 | 父母主要任务 | 卡片语气 |
+|---|---|---|
+| 10–13 | 清晰边界 + 安全感 + 小范围选择 | 具体、短句；给一点选择权 |
+| 14–18 | 从管理者转顾问；协商规则 | 平等、问想法；不替孩子做决定 |
+| 19–25 | 安全基地；支持而非指令 | 少建议、多听；允许试错 |
+| <10 | 具体描述 + 更短句子 | 不套青春期假设；以当下兴趣为主 |
+
+- 首选：两种库都合适时优先 OECD（家长要求尽量参考 PDF）；不要为了引用硬套。
+- 写法硬规则：我向信息、一次一问、允许沉默；即使引用的是 OECD，也要遵守这三条。
 
 ### 0.6 反馈闭环
 
@@ -220,6 +272,10 @@ avoid, observation_prompt, observation_options[3], confidence, evidence_refs[]
 >
 > **P1.1（2026-11-20 晚）**：第一张测试卡只有完成数据时太单薄——`notice` 现在也必须有 `ask_back` + `deeper`，
 > 按活动给具体问题（二胡哪一段、口算哪题易错、跳绳哪组最累），并禁止「今天有两条记录」这种系统口吻。
+>
+> **P1.3（2026-11-21）**：每张卡标注一条最佳实践（`practice_id`，API 映射展示名/页码/章节）；
+> 参考 OECD 2025 的 11 条 policy best practices + 《与青春期和解》的权威型养育/沟通技巧，
+> 只取与亲子日常沟通相关的原则；`suicide_prevention` 强制 `listen`。
 
 ### 0.11 与 v1 的关系
 

@@ -279,6 +279,9 @@ CREATE TABLE IF NOT EXISTS shine_dailies (
   lighter              TEXT NOT NULL DEFAULT '',
   ask_back             TEXT NOT NULL DEFAULT '',
   deeper               TEXT NOT NULL DEFAULT '', -- 再聊深一点的问题
+  practice_id          TEXT NOT NULL DEFAULT '', -- mhfa_listen|...|i_message|stop_interrogation|...
+  practice             TEXT NOT NULL DEFAULT '', -- 展示名
+  practice_source      TEXT NOT NULL DEFAULT '', -- OECD 2025, p.xx / 《与青春期和解》§x
   avoid                TEXT NOT NULL DEFAULT '',
   observation_prompt   TEXT NOT NULL DEFAULT '',
   observation_options  TEXT NOT NULL DEFAULT '[]',

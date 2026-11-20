@@ -263,7 +263,8 @@ GET /api/shine/export?format=md              // 条目导出（wiki 在私有 Gi
 GET /api/shine/daily?limit=30&before=YYYY-MM-DD&child_id=     // JWT：网页档案
 → 200 { "dailies": [ { "id":"sd_…","date":"2026-11-20","child_id":"sc_buding",
         "child_name":"布丁","mode":"praise|notice|listen|invite",
-        "headline","evidence","say_this","lighter","ask_back","deeper","avoid",
+        "headline","evidence","say_this","lighter","ask_back","deeper",
+        "practice_id","practice","practice_source","avoid",
         "observation_prompt","observation_options":["…"],"confidence":"low|medium|high",
         "evidence_refs":["checkin:cr_…"], "assigned_user","assigned_name",
         "ai_status":"ok|degraded","wiki_status":"ok|skipped|failed","sent_at",
@@ -501,6 +502,7 @@ token = base64url(`media_id.exp`) + HMAC-SHA256（同 `FILE_URL_SECRET`），有
 
 - 新增 `GET /api/shine/daily`（JWT，网页档案）与 `GET /api/agents/ai/shine/daily-input?date=`（X-Agent-Key，agent 备料）
 - P1.1：每日卡新增 `deeper`（第二层问题）；`praise/notice` 即使只有完成数据也必须有 `ask_back` + `deeper`
+- P1.2：每张卡标注一条最佳实践（`practice_id` + API 映射的 `practice`/`practice_source`）；来源可以是 OECD 2025 或《与青春期和解》；`suicide_prevention` 强制 `listen`
 - 新增任务类型 `shine.daily`：每天 20:45 入队，agent 生成后 API 通过企业微信推给 active 家人；每天指定一位家长说
 - 企业微信文本反馈 `说了 / 还没说 / 他笑了 / 他没啥反应 / 他不太想听 / 换我说` 走确定性处理，不经过模型；36 小时内有效
 - 数据模型新增 `shine_dailies` / `shine_daily_feedback`；种子新增 `sc_buding` / `sc_naicha`（每日轮换用，历史条目仍可用 `sc_default`）

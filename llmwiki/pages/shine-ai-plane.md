@@ -10,7 +10,7 @@
 ## 关键事实
 
 - **v2 每日看见（2026-11-20 决策 + P1 实现）**：`shine.daily` 每天 20:45 由 scheduler 入队，
-  agent `_daily` 生成（`shine-daily-v2`），API 落 `shine_dailies` 并推给 active 爸妈；每天按日期
+  agent `_daily` 生成（`shine-daily-v4`），API 落 `shine_dailies` 并推给 active 爸妈；每天按日期
   指定一人「今天你来说」；微信回「说了 / 还没说 / 他笑了 / 换我说」走确定性意图；21:30 只跟催一次。
   小程序不再有闪光 tab，微信是主入口；网页 `/api/shine/daily` 只读档案。见 `docs/12 §0`。
 - **每日看见的素材**：当天打卡（按 `checkin_projects.child` 归属，不混家庭项目）+ 近 7 天打卡基线 +
@@ -18,6 +18,14 @@
 - **只有完成数据时，notice 不能只写一句描述**：必须给 `ask_back`（轻问题）+ `deeper`（过程/方法/难点），
   按活动名选问题（二胡问哪一段/哪句卡、口算问哪题易错/怎么检查、跳绳问哪组最累/怎么找节奏）；
   不要写「今天有两条记录」这种系统口吻。否则家长收到会觉得单薄、没法接着聊。
+- **每张卡标注一条最佳实践**：模型只输出 `practice_id`，API 映射展示名/页码/章节。
+  OECD 2025 取 7 条：`mhfa_listen` / `mental_health_literacy` / `low_threshold` / `tailored` /
+  `stable_relationship` / `early_help` / `suicide_prevention`；《与青春期和解》取 8 条：
+  `connect_before_correct` / `share_yourself` / `i_message` / `stop_interrogation` / `side_by_side` /
+  `respect_silence` / `repair_relationship` / `stage_autonomy`。原文是政策/育儿书层面，不是话术手册；
+  卡片只取与亲子日常沟通相关的原则，不声称原文给了具体句子。`suicide_prevention` 强制 `listen`。
+- **写法硬规则**（来自《与青春期和解》）：我向信息（行为+感受+影响）、一次一问/不问为什么、
+  允许沉默、先连接再纠正、冲突先修复关系；按 10-13/14-18/19-25 分阶段放权，小于 10 岁用短句。
 - **孩子**：`shine_children` 种入 `sc_buding`/`sc_naicha`，每日按日期轮换；`sc_default` 保留给历史条目。
   网页手动记录现在可选孩子；`GET /api/shine/entries` 省略 `child_id` = 全部孩子。
 - **API 不持有模型 key 与 GitHub 凭证**；`ai_tasks` 只存 payload/结果/审计。家庭 wiki 原文只在

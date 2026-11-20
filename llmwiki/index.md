@@ -33,6 +33,7 @@
 - [gotcha-whereami-com](pages/gotcha-whereami-com.md) — whereami.com 是第三方网站非本项目域名；根路径静态文件（WW_verify 等）放 cijian-site/public/ 推 main 即生效
 - [gotcha-skill-archive-recursive](pages/gotcha-skill-archive-recursive.md) — opencode 递归扫描 skills 目录，归档技能放 `.archive/` 里照样被加载；归档要放同级 skills-archive
 - [gotcha-opencode-free-quota](pages/gotcha-opencode-free-quota.md) — 免费模型共享额度，压测后连对话一起 429；错误只在 stdout 事件流，stderr 可能是空的
+- [gotcha-airdrop-mtime-watermark](pages/gotcha-airdrop-mtime-watermark.md) — **AirDrop 保留拍摄 mtime/ birthtime，水位线按 mtime 判把当天投递当旧文件永久跳过**；到达时间必须 `max(mtime, birthtime, ctime)`
 
 ## howto 补充
 

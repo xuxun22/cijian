@@ -56,6 +56,10 @@
 ## 排障入口
 
 - 指派全进待指派 → 先查 `checkin_projects.active` 是否为 1（曾因 INSERT 占位符错位全变 0，已修）
+- **投了没算打卡 / 文件滞留 inbox 且日志有「早于启用水位线」** → AirDrop 保留拍摄 mtime/birthtime，
+  水位线误判旧文件（2026-11-20 已修 `_arrival=max(mtime,birthtime,ctime)`；papers 的
+  max(mtime,birthtime) 修法不够）；救滞留文件需回拨 `checkin/state.json` last_seen 并重启，
+  详见 [gotcha-airdrop-mtime-watermark](gotcha-airdrop-mtime-watermark.md)
 - 预览播放 410 → 正常到期（7 天）；403 → 签名过期（12h），前端重新取 `/api/checkin/media/:id/url`
 - sync 拉取为空但文件没改名 → 查 `checkin_media.archive_name` 是否已等于期望名（done 会确认）
 - **全判成器乐**：whisper.cpp 1.9 的 `-oj` **没有 no_speech_prob**（只有 transcription[].text），

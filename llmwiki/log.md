@@ -1,5 +1,11 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-20] decision | 闪光 v2「每日看见」：微信推送、小程序去 tab、指定说话人
+
+爸爸从未主动用小程序记闪光 → 入口从「家长输入」改为「AI 从打卡/试卷/记录生成每日卡，20:45 企微推给爸妈」。
+已确认：小程序去掉闪光 tab；每天指定一位家长说；允许 praise/notice/listen/invite 四种；14 天试运行。
+产品/任务/schema 草案见主仓 `docs/12-shine-plan.md §0`；本条只记决策，实现时按 §0.9 同步 04/05。
+
 ## [2026-11-20] fix | 微信对话又见「这次没想好」= z.ai 周/月额度打满，已加自动兜底模型
 
 `zai-coding-plan/glm-5.3-flash` 报 `Weekly/Monthly Limit Exhausted`（22:50 重置），chat.reply 两次重试后仍 failed，
@@ -246,3 +252,10 @@ AI 任务异常要补 markDevTaskFailed、能力面也要校验 dad 角色。
 口算/跳绳打卡「没上线」排障：两个 dev 任务都停在本地 assistant 分支（未 push 未部署）。
 落地 push-main 模式（合并 main+push+api timer/Vercel/mp CI/agent 自重启）并当天上线 M-C6
 手动打卡（每日口算/跳绳 + 微信 checkin_do/undo + completion_rate）。见 pages/devflow-push-main.md。
+
+## [2026-11-20] gotcha | 二胡 airdrop 没算打卡：AirDrop 保留拍摄 mtime/birthtime，checkin 水位线把当天投递当旧文件吞了
+
+18:40 录的视频 20:00 才投（ctime=到达时刻），checkin 按 mtime 判「早于水位线」永久跳过；
+papers 的 max(mtime,birthtime) 修法不够（birthtime 也被保留）。已修：arrival=max(三者)，
+并回拨 state.json last_seen 救回当天记录（23:30 归档 2026-11-20_二胡练习_IMG_5175.mov）。
+见 pages/gotcha-airdrop-mtime-watermark.md。

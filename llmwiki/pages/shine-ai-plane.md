@@ -9,6 +9,9 @@
 
 ## 关键事实
 
+- **v2 每日看见（2026-11-20 决策）**：新增 `shine.daily`（agent 20:45 生成并推送），
+  `serialized`、按孩子一天一单；小程序不再有闪光 tab，微信是主入口。产品/卡 schema/反馈闭环见
+  `docs/12-shine-plan.md §0`，落地时同步 `docs/04`/`docs/05`。
 - **API 不持有模型 key 与 GitHub 凭证**；`ai_tasks` 只存 payload/结果/审计。家庭 wiki 原文只在
   `github.com:xuxun22/cijian-family-wiki`（PRIVATE）+ agent 本地克隆。
 - analyze：`POST /api/shine/entries` → 202 + `task_id`，agent 长轮询（≤25s）领取，20s 心跳续租，

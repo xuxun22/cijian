@@ -111,32 +111,42 @@ CREATE TABLE sheets (
 
 ## 5. 任务契约（走现有 ai_tasks 平面，worker 新增三类）
 
-### 入口（已实现，2026-11-20 第 3 步）
+### 入口（已实现，2026-11-20 第 3 步；2026-11-21 自动分流）
 
-微信连发照片后回**「收卷」**（或「收一下卷」「识别试卷」「这是试卷」「收错题」）：
-api 取该用户最近 15 分钟、未被消费的照片（`wecom_messages` + `paper_intake` 幂等标记），
-下载为 `files` 中转（**TTL 1h**），按发送顺序合成一份卷，入队 `paper.ingest`；
-识别成功回微信预览后**立即删除**服务器中转文件。用户再回「入库」「第2题没错」「奶茶的」
-→ `paper.confirm`（`paper_sessions` 记住最近一份卷）。
+**自动分流（默认）**：微信发照片后不再需要「收卷」——服务器把照片挂进 `photo_batches`，
+最后一张后**静默 45 秒**，把这一批下载成一份材料（`files` 中转，TTL 1h），入队 `paper.ingest`。
+vision 先分类 `kind = exam | oral | other`：
+
+- `oral`（口算题卡，逐题验算答案）→ 回预览「这是奶茶的口算：12 题错 3——…」；
+- `exam`（有卷头/题号/题型混合）→ 回现有试卷预览；
+- `other` → **安静不处理**（本地/服务器临时副本都清掉）。
+
+**确认**：回「收」→ 入库；回「不收」→ 删除；「第2题没错」→ 纠错；「奶茶的」→ 补归属。
+**口算确认后自动打当天「每日口算」卡**（项目 `cp_math` 布丁 / `cp_math_nc` 奶茶，
+`media_type=none`），并回复「口算打卡成功（奶茶 · 11-21）」或「今天已经打过口算卡了」。
+
+手动路径仍保留：回「收卷」可立即处理最近 15 分钟照片（跳过 45 秒等待）。
 
 ### paper.ingest
 ```
-payload: { source: "wecom", from_user, requester,
+payload: { source: "wecom"|"wecom-auto", from_user, requester,
+           silent_other: true,              # 自动分流时 other 不回消息
            media: [{file_id}…] }            # file_id = api files 表（1h 中转）
-worker:  下载图 → 本地 inbox 分组 → vision（deepseek/deepseek-flash）→ 自动归属
-         → 切题判错 → 写 papers(status=preview)
-result:  { ok, paper_id, child_id, subject, unit, total, wrong,
+worker:  下载图 → 本地 inbox 分组 → vision（deepseek/deepseek-flash）
+         → kind 分类 → 归属/切题判错 → 写 papers(kind, status=preview)
+result:  { ok, kind, paper_id, child_id, subject, unit, total, wrong,
            attribution: "name|grade|asked", text: 微信预览文案 }
 ```
-- 预览文案格式（微信）：`奶茶 · 3年级数学 · 第4单元：6 题错 2——乘法口诀×1、周长×1。
-  回「入库」或告诉我哪里认错了。`
+- 预览文案格式（微信）：试卷 `奶茶 · 3年级数学 · 第4单元：6 题错 2——…回「收」入库；回「不收」丢掉。`
+  口算 `这是奶茶的口算：12 题错 3——口诀×2、除法×2…回「收」= 记错题 + 今天口算打卡；回「不收」= 丢掉。`
 
 ### paper.confirm
 ```
-payload: { from_user, paper_id, wrong_off: [2], child_name: "奶茶" }
-worker:  wrong_off → 对应题 is_wrong=0；child_name → 归属并迁移原图；
-         归属仍未知 → 回一句追问（不落 ready）；否则 status=ready
-result:  { ok, paper_id, total, wrong, text: 「记好了：…」 }
+payload: { from_user, paper_id, discard?: true, wrong_off: [2], child_name: "奶茶" }
+worker:  discard → 删本地卷与原图；wrong_off → 对应题 is_wrong=0；child_name → 归属并迁移原图；
+         归属仍未知 → 回一句追问（不落 ready）；否则 status=ready。
+         kind=oral 且确认成功 → 调 api 手动打卡「每日口算」（当日幂等），回复打卡结果。
+result:  { ok, paper_id, kind, child_name, total, wrong, checkin?, text: 「记好了… 口算打卡成功」 }
 ```
 
 ### paper.sheet（出卷）
@@ -201,6 +211,8 @@ result:  { ok, text }          # 本地查库，模板化回答
 
 - [ ] 微信连发 5 张卷图 → 预览文案正确（含自动归属姓名）→ 回「入库」→ Mac mini
       `papers/` 出现原图 + 本地库可查
+- [ ] 微信发一张口算照片 → 45 秒内回「这是奶茶的口算：N 题错 M」→ 回「收」→
+      错题入库 + 「口算打卡成功」；再发一张非试卷照片 → 安静不打扰
 - [ ] 一份无姓名、印着「五年级数学」的卷 → 自动归属布丁，不问
 - [ ] 一份匹配不上的卷 → 微信问，回「奶茶的」→ 入库
 - [ ] 「出3年级第4单元到第6单元的数学复习卷」→ 微信收到 PDF 文件消息；服务器上
@@ -229,6 +241,10 @@ result:  { ok, text }          # 本地查库，模板化回答
      `paper_intake` 幂等、`files` 1h TTL）→ `paper.ingest`；预览/确认走任务结果直发，
      `paper_sessions` 记住最近一份卷；「入库/第N题没错/奶茶的」→ `paper.confirm`；
      识别成功即删服务器中转文件。vision 固定 `deepseek/deepseek-flash`（多模态，实测可用）。
+   - **2026-11-21 自动分流**：照片最后一张后静默 45 秒 → `photo_batches` 到期 → 自动
+     `paper.ingest`（`silent_other`）；vision 分 `exam|oral|other`，其他类不打扰；
+     口算确认后 agent 调 `POST /api/agents/checkin/manual` 自动打当天「每日口算」卡
+     （项目名+孩子，幂等），回复「口算打卡成功」。「收/不收」= 确认/丢弃。
      企微文件消息直发（出卷 PDF）仍属第 4 步。
 4. agent：sheet 参数解析 + 排版模板 + chrome PDF + 交付
 5. agent：paper.query + 微信剧本联调

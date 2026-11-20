@@ -65,6 +65,26 @@
   （correctly 识别姓名/年级/单元/错题）；GLM 周额度打满时 deepseek 不受影响。
 - 仍待：出卷第 4 步（参数解析 + A4 模板 + Chrome PDF + 企微文件直发）、paper.query。
 
+## 已落地（2026-11-21 照片自动分流 + 口算打卡）
+
+- **不再需要「收卷」**：每张图入 `photo_batches`（due_at = 最后一张 +45s）；
+  `createPhotoBatchLoop`（index.ts，5s tick）到期 → 下载 `files`（1h TTL）→
+  `paper.ingest`（`silent_other: true`）。「收卷」保留为立即处理的后门。
+- **vision 一次调用同时分类 + 切题**：`kind = exam | oral | other`。
+  - `oral`：口算题卡，**逐题验算孩子写的答案**（不依赖红叉），tags 是错误类型
+    （进位/退位/口诀/除法/混合）；合成卷实测：12 题准确找出 3 道错（45÷9=6、
+    36+27=62、54÷6=8），归属「奶茶」。
+  - `other`：本地删卷删图、服务器中转即删、**不回微信**（安静）。
+- **确认词**：「收 / 收吧 / 收了 / 确认 / 入库」→ 入库；「不收 / 不要 / 丢掉 / 算了」
+  → `paper.confirm {discard:true}` 删卷删原图并清 session；仍有「第N题没错」「奶茶的」。
+- **口算自动打卡**：`paper.confirm` 成功且 `kind=oral` → agent 调
+  `POST /api/agents/checkin/manual`（`{project_name:"每日口算", child:"奶茶"}`；
+  服务端按名+孩子找 `media_type=none` 项目，`manualCheckin` 当日幂等）→
+  回复「… 口算打卡成功（奶茶 · 11-21）」或「今天已经打过口算卡了」；打卡失败不推翻入库，
+  回复里给出补救说法。
+- 新增 api 表 `photo_batches`；papers 表新增 `kind`（老库 `ALTER` 自动补，默认 exam）。
+- 测试：api 152、agent 130 全绿（含批次到期/下载失败释放/口算确认打卡/丢弃删卷）。
+
 ## 坑与决策
 
 - `papers.child_id` 必须可空：第 1 步建卷时归属未知（docs/17 已同步，别照抄 v1 的 NOT NULL）。

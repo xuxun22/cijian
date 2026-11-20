@@ -201,6 +201,13 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-21] feat | 错题本自动分流：照片 45s 静默识别（试卷/口算/其他），口算自动打卡
+
+微信照片不再需要「收卷」：photo_batches 到期自动 paper.ingest；vision 分 exam/oral/other，
+other 安静；「收/不收」确认/丢弃。口算确认后调 agent checkin manual 自动打「每日口算」卡并
+明确回「打卡成功」（当日幂等）。合成口算卷实测：12 题准确找出 3 道错、归属奶茶。
+api 152 / agent 130 测试绿。详见 pages/papers-pipeline.md。
+
 ## [2026-11-20] feat | 错题本第 3 步：微信「收卷」入口 + 预览/确认回路（api 侧）
 
 微信照片 +「收卷」→ 15 分钟窗口合成一份卷（paper_intake 幂等）→ files 1h 中转 →

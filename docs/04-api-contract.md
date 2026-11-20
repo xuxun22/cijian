@@ -444,6 +444,13 @@ token = base64url(`media_id.exp`) + HMAC-SHA256（同 `FILE_URL_SECRET`），有
 
 接口不兼容变更：先在本文档加「v1.x 变更记录」小节，三仓同步实现后再合入；家庭规模不引入 URL 版本号。
 
+## v1.7 变更记录（2026-11-20 · 打卡分孩子）
+
+- `checkin_projects` 新增 `child` 列（项目归属小朋友；空 = 全家/未分组），API 项目对象返回 `child`
+- 同名项目每个孩子一行：每日口算 = `cp_math`（布丁）/ `cp_math_nc`（奶茶），跳绳 = `cp_rope` / `cp_rope_nc`；记录 `UNIQUE(project_id,date)` 天然按孩子隔离
+- 微信能力面 `checkins/do|undo` 新增 `child` 参数；同名项目不带 child 返回 400 并列出可选孩子；`checkins/stats` 项目标签为 `孩子·项目`
+- 种子归属：布丁 = 每日阅读 + 每日口算 + 跳绳；奶茶 = 二胡练习 + 每日口算 + 跳绳
+
 ## v1.6 变更记录（2026-11-19 · 手动打卡项目）
 
 - 打卡项目 `media_type` 新增 `none`（手动打卡，不投媒体）；项目表单可选「手动打卡」

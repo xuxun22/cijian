@@ -105,3 +105,8 @@ Node 300s requestTimeout 切断慢上传（放宽到 1 小时）、agent claim �
 字段 个数/组数），`media_type=none`、全周，api `migrate()` 按固定 id 幂等种入；打卡入口三个——
 网页/小程序项目卡「打卡」按钮、微信对话（cap `checkins/do`/`undo`，按项目名）。统计新增
 `completion_rate`。注意系统没有孩子/成员维度，项目全家共享，靠项目名区分。
+
+2026-11-20 分孩子（M-C7）：`checkin_projects.child`（布丁/奶茶，空=全家）。同名项目每孩子一行——
+`cp_math`/`cp_rope` = 布丁，`cp_math_nc`/`cp_rope_nc` = 奶茶；记录 UNIQUE(project_id,date) 天然隔离。
+迁移幂等：ALTER 加列 + 按名字回填（每日阅读→布丁、二胡练习→奶茶）+ INSERT OR IGNORE 双胞胎。
+cap `checkins/do|undo` 带 `child`，同名不带 → 400 列可选孩子；网页按孩子分组、mp 卡名带前缀。

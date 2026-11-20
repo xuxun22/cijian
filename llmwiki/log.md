@@ -174,6 +174,13 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-20] deploy | get 接管 E2E 全链路通过 + steps 熔断调查
+
+get-ui#2：issue→gate handoff→intake→plan(42s)→批准→execute(70s, deepseek-flash 付费档)→verify
+(npm run build 绿)→提交→Draft MR !11（Closes #2，pipeline 241 绿）→wiki 桩（护栏正确保住了人工页）。
+期间修：execute 漏传 agent 名、免费额度打满（get 项目切 deepseek/deepseek-flash）、
+dev/dev-get steps 60→200 + 截断收尾话术（用户微信见「本轮已达最大步数」系模型措辞，非代码）。
+
 ## [2026-11-19] howto | get 接管一期实现落地：intake 端点 / ProjectSpec / gitlab 客户端 / handoff gate
 
 cijian-api 126 测试绿（+intake 7 项）、cijian-agent 82 绿（+14 项）、get-dev gate 改交接模式。

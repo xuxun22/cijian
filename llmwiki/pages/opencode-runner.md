@@ -30,3 +30,7 @@ Agent 用 `opencode run` 作为 AI 任务执行器的全部实测事实（看见
 - **权限规则有序、后匹配者胜——窄放行必须排在宽禁止之后**：`python3 *` deny 会吃掉
   之前放的 `python3 -m *` allow；正确顺序是先宽 deny 再窄 allow（get 版 profile 踩过，
   dev-get.md 的「窄放行必须放在对应宽 deny 之后」段是范本）。
+- **`steps: N` 是单次任务的工具轮数熔断**：到上限 opencode 收走工具强制总结，模型的
+  收尾措辞会原样进微信（出现过吓人的「本轮已达最大步数」）。预算（2026-11-20）：chat 8 /
+  plan 40 / dev+dev-get **200**（原 60，get 重上下文 + 付费档后放宽）。截断不是失败：改动
+  都在 worktree，「接着改」= 新会话新预算；两份 dev prompt 已写死截断收尾话术。

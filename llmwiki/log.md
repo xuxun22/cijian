@@ -174,6 +174,16 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-20] decision | 错题本设计定稿（docs/17）：真相源=Mac mini，服务器仅≤7天缓存通道
+
+三决策确认：微信发图可（短途过服务器）、PDF 走企微文件消息直发（即发即删）、外部模型 API 可。
+铁律细化：判据=「随时删腾讯云不丢数据」；据此重估 checkin 预览 7 天存量=缓存合规，无需整改。
+
+## [2026-11-20] decision | 隐私铁律确立：腾讯云服务器不存任何家庭私密信息，家庭数据长期归属 Mac mini
+
+起因：错题本方案 v1 把试卷照片永久存服务器，被爸爸否决并立规。已建 pages/privacy-iron-law.md
+（含 checkin 预览 7 天存量冲突的整改待办）。
+
 ## [2026-11-20] deploy | get 接管 E2E 全链路通过 + steps 熔断调查
 
 get-ui#2：issue→gate handoff→intake→plan(42s)→批准→execute(70s, deepseek-flash 付费档)→verify
@@ -197,3 +207,9 @@ cijian-api 126 测试绿（+intake 7 项）、cijian-agent 82 绿（+14 项）�
 planning → waiting_plan → execute → waiting_input → done；新增 dev-plan 只读 agent、`.cijian-ask.json` 提问协议、
 小程序 pages/dev/{board,detail}（仅 dad）。同时沉淀几条坑：JWT users.id 与企微 UserID 需绑定、同毫秒任务靠 rowid 排序、
 AI 任务异常要补 markDevTaskFailed、能力面也要校验 dad 角色。
+
+## [2026-11-20] gotcha+decision | dev「提交」升级为 push-main 直上（committed≠上线排障）
+
+口算/跳绳打卡「没上线」排障：两个 dev 任务都停在本地 assistant 分支（未 push 未部署）。
+落地 push-main 模式（合并 main+push+api timer/Vercel/mp CI/agent 自重启）并当天上线 M-C6
+手动打卡（每日口算/跳绳 + 微信 checkin_do/undo + completion_rate）。见 pages/devflow-push-main.md。

@@ -1,6 +1,22 @@
 # gotcha：opencode 免费模型是共享额度，压测后连对话一起挂
 
-> 更新：2026-11-18 · 仓库：cijian-agent · 类别：gotcha · 状态：现行
+> 更新：2026-11-20 · 仓库：cijian-agent · 类别：gotcha · 状态：现行
+
+## 症状（2026-11-20 新增：付费 coding plan 的周/月限额）
+
+微信查询又收到「这次没想好，等下再问我一次」，`ai_tasks.last_error`：
+
+```
+RunnerError: opencode exit 1：provider.quota: Weekly/Monthly Limit Exhausted.
+Your limit will reset at 2026-11-20 22:50:23
+```
+
+这次不是免费档，是 `zai-coding-plan/glm-5.3-flash` 的**周/月额度**打满（coding plan 按账号共享，
+所有 z.ai 模型一起不可用）。备份模型 `deepseek/deepseek-flash`（技能回顾用的）同时正常。
+
+**已改成自动兜底**：`AiWorker._chat` 捕获 `provider.quota|free-limit|usage limit` 错误后，
+本次对话自动换 `ai_review_model`（默认 `deepseek/deepseek-flash`）重试，不再把兜底文案发给家人。
+实测：主模型 429 立刻返回 → 切 deepseek → 1.7s 正常答「ok」。额度恢复后下次对话自动回到主模型（无需重启）。
 
 ## 症状（2026-11-18 新增）
 
@@ -43,3 +59,4 @@ opencode run --standalone --format json --auto "只输出 ok" | tail -3
 - 调 prompt / 压测尽量用付费模型或本地模型，别连续消耗免费额度；
 - 看到「失败但没错误信息」，先查 stdout 事件流，再看 stderr；
 - 辅助任务（回顾、摘要、清理）默认独立模型，别和主对话抢资源。
+- 主对话模型与兜底模型不要选同一家（2026-11-20 起主 z.ai、兜底 deepseek），一家的额度打满不影响家人对话。

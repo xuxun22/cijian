@@ -1,5 +1,11 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-20] fix | 微信对话又见「这次没想好」= z.ai 周/月额度打满，已加自动兜底模型
+
+`zai-coding-plan/glm-5.3-flash` 报 `Weekly/Monthly Limit Exhausted`（22:50 重置），chat.reply 两次重试后仍 failed，
+api 按 failed 回兜底文案。worker 现在捕获额度类错误后自动换 `ai_review_model`（deepseek/deepseek-flash）重试，
+实测 1.7s 正常回复。见 [gotcha-opencode-free-quota](pages/gotcha-opencode-free-quota.md)。
+
 ## [2026-11-20] gotcha | 打卡分孩子上线即 crash loop：列迁移在 migrate() 之后
 
 M-C7 五仓上线（cijian/api/site/mp/agent），生产 api 秒崩：`no such column: child`。

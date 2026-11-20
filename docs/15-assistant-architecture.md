@@ -105,6 +105,7 @@ flowchart LR
 |---|---|---|
 | `chat.reply` | `_chat` | 人格对话；命中固定意图走 worker 兜底（见 §5.2） |
 | `shine.analyze` | `_analyze` | 看图片/文本，产出闪光条目结构化结果 |
+| `shine.daily` | `_daily` | 每天 20:30 从打卡/观察/反馈生成一张卡；失败退观察任务 |
 | `digest.daily` / `digest.weekly` | `_digest` | 出日报/周报，写 wiki 视图 |
 | `assistant.wiki.write` | `_memory_write` | 写一条家庭记忆（偏好/事实/流水），commit+push wiki |
 | `assistant.skill.review` | `_skill_review` | 回合后回顾：维护归档 + 模型出 JSON + lint/写盘/台账/提交/通知 |
@@ -126,18 +127,19 @@ flowchart LR
 | 提交上报 | `routes/agentDev.ts` | `/api/agents/dev/activity`（X-Agent-Key，幂等）+ `/api/assistant/dev/activity`（JWT，仅爸爸） |
 | 打印平面 | `routes/agents.ts` | agent 心跳 / claims / print_jobs 报果 |
 | 打卡 | `routes/agentCheckin.ts` | 媒体上报、项目清单、sync 差量、重命名确认 |
-| 领域 | `services/*.ts` | `ai`（任务类型/租约/重试/组队）、`dev`（编码任务状态机）、`capability`（JWT）、`print`、`checkin`、`shine`、`reminders`、`subscriptions`、`wecom`、`scheduler`、`sweeper` |
+| 领域 | `services/*.ts` | `ai`（任务类型/租约/重试/组队）、`dev`（编码任务状态机）、`capability`（JWT）、`print`、`checkin`、`shine`、`shineDaily`（每日卡/反馈/21:30 跟催）、`reminders`、`subscriptions`、`wecom`、`scheduler`、`sweeper` |
 | 存储 | `db.ts` | 22 张表 + 迁移（含 `dev_tasks.project`） |
 
 **两个平面不要混**：
 - **打印平面**（`print_jobs`）：短任务、重试少、`/api/agent/claims` 领取，防重复打印靠租约 + 本地 `phase`；
-- **AI 平面**（`ai_tasks`）：长任务、可串行（`serialized`）、心跳续租、失败按 `maxAttempts` 重试、终态 90 天清理。
+- **AI 平面**（`ai_tasks`）：长任务、可串行（`serialized`）、心跳续租、失败按 `maxAttempts` 重试、终态 90 天清理；写 wiki 的任务（含 `shine.daily`）跨类型同组串行。
   agent 侧默认 3 个并发槽（`CIJIAN_AI_CONCURRENCY`）：**1 个后台槽**（dev/digest/技能/记忆等非对话任务，保持原来的串行安全）+ **2 个对话槽**，长编码任务不再堵微信对话；槽位只影响领取类型，`serialized` 仍由 API 侧保证。
 
 | 任务类型 | 优先级 | 重试 | 串行 |
 |---|---|---|---|
 | `chat.reply` | 5 | 2 | 否 |
 | `shine.analyze` | 10 | 2 | 否 |
+| `shine.daily` | 55 | 2 | 是 |
 | `dev.task` | 15 | 1 | **是**（同一时刻只跑一个编码任务） |
 | `dev.commit` | 16 | 2 | 否 |
 | `assistant.wiki.write` | 40 | 3 | 是 |

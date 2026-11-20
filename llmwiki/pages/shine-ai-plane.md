@@ -9,18 +9,25 @@
 
 ## 关键事实
 
-- **v2 每日看见（2026-11-20 决策）**：新增 `shine.daily`（agent 20:45 生成并推送），
-  `serialized`、按孩子一天一单；小程序不再有闪光 tab，微信是主入口。产品/卡 schema/反馈闭环见
-  `docs/12-shine-plan.md §0`，落地时同步 `docs/04`/`docs/05`。
+- **v2 每日看见（2026-11-20 决策 + P1 实现）**：`shine.daily` 每天 20:45 由 scheduler 入队，
+  agent `_daily` 生成（`shine-daily-v1`），API 落 `shine_dailies` 并推给 active 爸妈；每天按日期
+  指定一人「今天你来说」；微信回「说了 / 还没说 / 他笑了 / 换我说」走确定性意图；21:30 只跟催一次。
+  小程序不再有闪光 tab，微信是主入口；网页 `/api/shine/daily` 只读档案。见 `docs/12 §0`。
+- **每日看见的素材**：当天打卡（按 `checkin_projects.child` 归属，不混家庭项目）+ 近 7 天打卡基线 +
+  近 7 天手动观察 + `growth.next_observation` + 最近反馈；没有素材输出 `invite`，不硬夸。
+- **孩子**：`shine_children` 种入 `sc_buding`/`sc_naicha`，每日按日期轮换；`sc_default` 保留给历史条目。
+  网页手动记录现在可选孩子；`GET /api/shine/entries` 省略 `child_id` = 全部孩子。
 - **API 不持有模型 key 与 GitHub 凭证**；`ai_tasks` 只存 payload/结果/审计。家庭 wiki 原文只在
   `github.com:xuxun22/cijian-family-wiki`（PRIVATE）+ agent 本地克隆。
 - analyze：`POST /api/shine/entries` → 202 + `task_id`，agent 长轮询（≤25s）领取，20s 心跳续租，
   `POST /tasks/:id/result` 落条目并在**同一事务**入队 `shine.wiki.ingest`。
-- wiki 类任务**全局串行**（同类型同时只一单）：claim SQL 用 `NOT EXISTS` 排除同类型 claimed/running。
+- wiki 类任务**全局串行**：写家庭 wiki 的任务（`shine.wiki.*` / `shine.review.*` / `shine.daily` /
+  `assistant.wiki.write` / `assistant.skill.review`）同属一个 **wiki 组**，跨类型同时只一单。
 - 视图 `PUT /api/agents/ai/views` 带 `commit_count`（`git rev-list --count HEAD`），≤ 已存值直接 409。
-- agent 侧：`cijian_agent/ai/worker.py` 能力线程；无 `wiki_deploy_key` 的机器只报 `shine.analyze`。
+- agent 侧：`cijian_agent/ai/worker.py` 能力线程；无 `wiki_deploy_key` 的机器不报 wiki 类任务，但仍报 `shine.analyze`/`shine.daily`（每日看见可生成，wiki 落档 best-effort）。
 - 模型只改文件；git commit/push 与视图发布由 worker 做（`shine-wiki` profile 禁 shell）。
 - 实测：文字 analyze 7~17s、图片 12s；wiki ingest/redact 各 ~6 分钟（可接受，异步）。
+- **P1 单测**：cijian-api 146 绿、cijian-agent 121 绿；site build / mp typecheck 绿（2026-11-20）。
 
 ## 踩坑
 
@@ -37,6 +44,16 @@
   （`git init --bare`，`CIJIAN_AI_WIKI_REPO` 指过去），`python3 -m cijian_agent --once` 跑一轮，避免污染真实家庭 wiki。
 - **api 部署**：push 触发的 Deploy 可能因 Tailscale SSH 超时失败（dial tcp :22 timeout），
   服务器有 5 分钟自拉取 timer 兜底；失败可 `gh run rerun <id>`。
+- **每日看见也写 wiki，必须进 wiki 组串行**：只按「同类型 serialized」挡不住 `shine.daily` 与
+  `shine.wiki.ingest` 同时改同一个 git 仓；claim SQL 的跨类型 `NOT EXISTS` 是必须的。
+- **scheduler 的每日日期用「计划时间」算**：`shanghaiToday()` 在 tick 晚一点（跨零点）会串天；
+  用 `Intl` 按 `next_run_at` 取上海日期。
+- **测试 mock 企业微信的 msgid 必须唯一**：`wecom_messages.msg_id` 有 UNIQUE，两个 send 同毫秒
+  返回同一个 `Date.now()` 会触发 `UNIQUE constraint failed`；生产由企微保证唯一。
+- **`GET /api/shine/entries` 省略 child_id = 全部孩子**（v1.6）：网页档案要同时显示布丁/奶茶；
+  `POST /entries` 仍默认 `sc_default`，所以网页表单必须显式带 `child_id`。
+- **每日卡最终态是「家长说没说」**：`shine_daily_feedback` 以 (daily_id, user_id) 唯一；
+  「他笑了」这类反应默认 `said=1`，避免家长只回反应时被当成没说。
 
 ## 相关
 

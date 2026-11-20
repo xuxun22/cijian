@@ -21,9 +21,8 @@
   direct 直连与 deepagents 列为 Phase 3 备选。
 - **prompt 归 agent 所有**（`cijian_agent/ai/prompts/`，带版本号）；任务 payload 只带 `prompt_version`。
 - **链式编排在 API**：analyze 成功落库的同一事务入队 `shine.wiki.ingest`；删除条目入队 `shine.wiki.redact`。
-- **多 agent 并发**：claim 原子 CAS，analyze 随机器数横向扩容；`shine.wiki.*`/`shine.review.*` 标记
-  `serialized` 全局串行（同类型同时只有一单在跑），git `pull --rebase` + push 重试兜底。
-- **能力按配置上报**（`printers.ai_capabilities`）：没配 wiki deploy key 的机器只报 `shine.analyze`。
+- **多 agent 并发**：claim 原子 CAS，analyze 随机器数横向扩容；写家庭 wiki 的任务（`shine.wiki.*`/`shine.review.*`/`shine.daily`/`assistant.wiki.write`/`assistant.skill.review`）同属一个 **wiki 组**，跨类型全局串行，git `pull --rebase` + push 重试兜底。
+- **能力按配置上报**（`printers.ai_capabilities`）：没配 wiki deploy key 的机器不报 wiki 类，但仍报 `shine.analyze`/`shine.daily`（每日卡可生成，wiki 落档 best-effort）。
 
 ## 备选与否决
 

@@ -208,7 +208,7 @@ CREATE UNIQUE INDEX idx_shine_entries_client ON shine_entries(user_id, client_id
 -- AI 任务队列（与 print_jobs 不同队列：长轮询领取、心跳续租、报果）
 CREATE TABLE IF NOT EXISTS ai_tasks (
   id               TEXT PRIMARY KEY,          -- at_…
-  type             TEXT NOT NULL,             -- shine.analyze|shine.wiki.ingest|shine.review.monthly|shine.wiki.lint|shine.wiki.redact
+  type             TEXT NOT NULL,             -- shine.analyze|shine.daily|shine.wiki.ingest|shine.review.monthly|shine.wiki.lint|shine.wiki.redact
   status           TEXT NOT NULL DEFAULT 'queued', -- queued|claimed|running|succeeded|failed|cancelled|expired
   priority         INTEGER NOT NULL DEFAULT 100,
   payload          TEXT NOT NULL DEFAULT '{}', -- {entry_id, child_id, prompt_version, …}（无家庭内容正文）
@@ -259,7 +259,65 @@ CREATE TABLE IF NOT EXISTS shine_views (
 );
 ```
 
-`printers` 增列：`ai_capabilities TEXT NOT NULL DEFAULT '[]'`（能力路由：无 wiki deploy key 的机器只报 analyze）。
+`printers` 增列：`ai_capabilities TEXT NOT NULL DEFAULT '[]'`（能力路由：无 wiki deploy key 的机器报 analyze/daily，不报 wiki 类）。
+
+### 每日看见（v1.6）
+
+> 设计见 docs/12 §0。API 只存卡片缓存与反馈枚举；agent 会 best-effort 把同一张卡写到
+> 家庭 wiki 的 `children/<id>/daily/<date>.md|json`（真相源优先本地/GitHub）。
+
+```sql
+CREATE TABLE IF NOT EXISTS shine_dailies (
+  id                   TEXT PRIMARY KEY,      -- sd_…
+  child_id             TEXT NOT NULL REFERENCES shine_children(id),
+  child_name           TEXT NOT NULL DEFAULT '',
+  date                 TEXT NOT NULL,         -- YYYY-MM-DD（Asia/Shanghai）
+  mode                 TEXT NOT NULL DEFAULT 'invite', -- praise|notice|listen|invite
+  headline             TEXT NOT NULL DEFAULT '',
+  evidence             TEXT NOT NULL DEFAULT '',
+  say_this             TEXT NOT NULL DEFAULT '',
+  lighter              TEXT NOT NULL DEFAULT '',
+  ask_back             TEXT NOT NULL DEFAULT '',
+  avoid                TEXT NOT NULL DEFAULT '',
+  observation_prompt   TEXT NOT NULL DEFAULT '',
+  observation_options  TEXT NOT NULL DEFAULT '[]',
+  confidence           TEXT NOT NULL DEFAULT 'low',
+  evidence_refs        TEXT NOT NULL DEFAULT '[]',
+  assigned_user        TEXT,                  -- 今天指定谁来说（wecom userid）
+  assigned_name        TEXT NOT NULL DEFAULT '',
+  ai_status            TEXT NOT NULL DEFAULT 'ok',    -- ok|degraded
+  ai_model             TEXT,
+  ai_prompt_version    TEXT,
+  wiki_status          TEXT NOT NULL DEFAULT 'skipped', -- ok|skipped|failed
+  task_id              TEXT,
+  sent_at              TEXT,
+  created_at           TEXT NOT NULL,
+  updated_at           TEXT NOT NULL,
+  UNIQUE(child_id, date)                      -- 重跑覆盖内容，保留 assigned/sent_at
+);
+CREATE INDEX idx_shine_dailies_date ON shine_dailies(date DESC);
+CREATE INDEX idx_shine_dailies_task ON shine_dailies(task_id);
+
+CREATE TABLE IF NOT EXISTS shine_daily_feedback (
+  id           TEXT PRIMARY KEY,              -- sf_…
+  daily_id     TEXT NOT NULL REFERENCES shine_dailies(id) ON DELETE CASCADE,
+  user_id      TEXT NOT NULL,
+  user_name    TEXT NOT NULL DEFAULT '',
+  said         INTEGER,                       -- 1 说了 | 0 没说 | NULL 未知
+  reaction     TEXT NOT NULL DEFAULT '',      -- bright|shy|neutral|resistant|more
+  child_quote  TEXT NOT NULL DEFAULT '',      -- 家长转述的孩子原话（≤200）
+  created_at   TEXT NOT NULL,
+  updated_at   TEXT NOT NULL,
+  UNIQUE(daily_id, user_id)
+);
+```
+
+种子（幂等）：
+
+- `shine_children` 新增 `sc_buding`（布丁，sort=1）、`sc_naicha`（奶茶，sort=2）；`sc_default` 保留给历史条目。
+- `schedules` 新增 `sch_shine_daily`：`daily 20:45` → `shine.daily`，payload `{"reason":"daily"}`；
+  scheduler 入队时补 `date=计划时间的上海日期`。
+- `ai_tasks.type` 新增 `shine.daily`（priority 55、maxAttempts 2、serialized）；`ai_capabilities` 增 `shine.daily`。
 
 ## 状态转换规则（api 实现依据）
 
@@ -290,6 +348,8 @@ AI 任务（v1.5）：
 | 动作 | 变更 |
 |---|---|
 | `POST /entries` | 建 `shine_entries(ai_status=pending)` + 入队 `shine.analyze`（dedupe=`shine.analyze:<id>`） |
+| scheduler 20:45 | 入队 `shine.daily`（dedupe=`sched:<schedule>:<计划时间>`，payload 带上海日期） |
+| report result（daily） | upsert `shine_dailies`（UNIQUE(child,date)，保留 assigned/sent_at）→ API 给 active 家人发微信；指定说话人按日期轮换 |
 | claim（长轮询 ≤25s） | `queued→claimed`，`attempts+=1`，`lease=now+120s`；**serialized 类型（wiki.*/review.*）同类型已有 claimed/running 时不再派发** |
 | agent heartbeat（20s） | `lease=now+60s`；`cancel_requested=true` 时响应 cancel |
 | report result（analyze） | 条目写回 AI 字段 `ai_status=ok`；**同一事务**入队 `shine.wiki.ingest`（dedupe=`shine.wiki.ingest:<id>:<n>`） |
@@ -309,6 +369,7 @@ AI 任务（v1.5）：
 | 打卡预览片 `data/media/` | 7 天（`preview_expires_at`） | sweeper 物理删除 + 置 `expired`（v1.4） |
 | 待指派媒体 | 14 天未处理 | sweeper 置 `dismissed`（v1.4） |
 | shine 软删条目 | 30 天 | sweeper 硬删（v1.5） |
+| `shine_dailies` / `shine_daily_feedback` | 永久（API 缓存；wiki 有同日副本） | 不做自动清理（v1.6） |
 | ai_artifacts `data/artifacts/` | 30 天（`expires_at`） | sweeper 物理删除 + 删行（v1.5） |
 | ai_tasks（终态） | 90 天 | sweeper 删除 + events 级联（v1.5） |
 

@@ -211,7 +211,7 @@ POST /api/shine/entries
 → 400 bad_request（文字与图片都空 / 文字>500 / date 非法 / 模型看不了图片）
 → 404 not_found（child 或 image_file 不存在/过期） / 413 / 415 / 429（10/min，60/day）
 
-GET /api/shine/entries?child_id&from&to&tag&q&limit=30&before=…      // 时间线（软删不返回）
+GET /api/shine/entries?child_id&from&to&tag&q&limit=30&before=…      // 时间线（软删不返回；v1.6 省略 child_id = 全部孩子）
 → 200 { "entries": [ { "id","date","kind","raw_text","highlight","say_this","tags":["思考"],
         "said_at","feedback","ai_status","wiki_status","created_at" } ], "next": "sh_…|null" }
 
@@ -253,6 +253,42 @@ POST /api/shine/review   { "period": "2026-11" }        // 入队 shine.review.m
 GET /api/shine/export?format=md              // 条目导出（wiki 在私有 GitHub 仓，不经 API）
 → 200 text/markdown（Content-Disposition: attachment）
 ```
+
+### 每日看见（v1.6）
+
+> 设计见 docs/12 §0。每天 20:45 agent 生成一张卡，API 完成后立即通过企业微信推给爸妈；
+> 小程序不再设「闪光」tab，微信是主入口；网页 `/tools/shine/` 只读档案。
+
+```
+GET /api/shine/daily?limit=30&before=YYYY-MM-DD&child_id=     // JWT：网页档案
+→ 200 { "dailies": [ { "id":"sd_…","date":"2026-11-20","child_id":"sc_buding",
+        "child_name":"布丁","mode":"praise|notice|listen|invite",
+        "headline","evidence","say_this","lighter","ask_back","avoid",
+        "observation_prompt","observation_options":["…"],"confidence":"low|medium|high",
+        "evidence_refs":["checkin:cr_…"], "assigned_user","assigned_name",
+        "ai_status":"ok|degraded","wiki_status":"ok|skipped|failed","sent_at",
+        "feedback":[ { "user_name","said":true|false|null,
+                       "reaction":"bright|shy|neutral|resistant|more","child_quote" } ] } ],
+        "next": "YYYY-MM-DD|null" }
+```
+
+```
+GET /api/agents/ai/shine/daily-input?date=YYYY-MM-DD          // X-Agent-Key：agent 备料
+→ 200 { "date":"2026-11-20",
+        "child": { "id":"sc_buding","name":"布丁","birth_year":2016 } | null,
+        "checkins":[ { "record_id","date","project":{"id","name","child"},
+                       "fields":{},"media_count","media_types","duration_seconds" } ],
+        "recent_checkins":[ … ],                                // 近 7 天，用于基线
+        "recent_entries":[ … ],                                 // 近 7 天手动观察
+        "growth": { … } | null,                                 // agent 发布的 growth 视图
+        "recent_dailies":[ … ], "recent_feedback":[ … ] }
+```
+
+- 任务 `shine.daily`（priority 55，`serialized`，maxAttempts 2）：scheduler 每天 20:45 入队，payload 带计划日的上海日期；agent 报果后 API 落 `shine_dailies`，并给 `wecom_users` 里 active 的家人各发一条文本。
+- 每天指定一位家长「今天你来说」，按日期轮换；另一人回「换我说」可改。家长回「说了 / 还没说 / 他笑了 / 他没啥反应 / 他不太想听」由 API 确定性处理，不经过模型；36 小时内有效。
+- 21:30 API 侧跟催一次：只发给指定的人、只在「已推送且没有任何反馈」时发，`app_state` 去重；不回不再催。
+- `mode` 四值：`praise`（有过程证据）/ `notice`（只描述）/ `listen`（先接住情绪）/ `invite`（无素材，给观察任务）。
+- API 不存 wiki 原文；每日卡由 agent best-effort 写家庭 wiki（`children/<id>/daily/<date>.md|json`），API 这份是缓存/展示。
 
 ## Agent 侧接口（X-Agent-Key）
 
@@ -299,11 +335,11 @@ POST /api/agents/checkin/renames/:media_id/done
 ### AI 任务平面（v1.5）
 
 > agent 的 `ai` 能力线程专用（docs/13-ai-agent-plan.md §3/§7）。AI 任务与打印任务**不同队列**：
-> 长轮询领取、心跳续租、报果；`shine.wiki.*` / `shine.review.*` 为 `serialized`——同类型全局同时只有一单在跑。
+> 长轮询领取、心跳续租、报果；写家庭 wiki 的任务（`shine.wiki.*` / `shine.review.*` / `shine.daily` / `assistant.wiki.write` / `assistant.skill.review`）同属一个 **wiki 组**，跨类型全局同时只有一单在跑。
 
 ```
 POST /api/agents/ai/tasks/claim
-{ "types": ["shine.analyze", "shine.wiki.ingest"] }   // 按 agent 实际能力上报（无 wiki key 的机器只报 analyze）
+{ "types": ["shine.analyze", "shine.daily", "shine.wiki.ingest"] }   // 按 agent 实际能力上报（无 wiki key 的机器报 analyze/daily，不报 wiki 类）
 → 200 { "task": { "id": "at_…", "type": "shine.analyze", "payload": { "entry_id": "sh_…",
           "child_id": "sc_default", "prompt_version": "shine-analyze-v1" },
           "lease_expires_at": "…", "attempt": 1 } }
@@ -461,11 +497,20 @@ token = base64url(`media_id.exp`) + HMAC-SHA256（同 `FILE_URL_SECRET`），有
 - 自动指派（AI 提示 / 唯一未完成）跳过 `media_type=none`，媒体不能被指派到手动项目
 - 部署时幂等种入两个手动项目：`cp_math` 每日口算（字段 题数/错题）、`cp_rope` 跳绳（字段 个数/组数）（固定 id，重复执行不重复插入）
 
+## v1.6 变更记录（2026-11-20 · 每日看见）
+
+- 新增 `GET /api/shine/daily`（JWT，网页档案）与 `GET /api/agents/ai/shine/daily-input?date=`（X-Agent-Key，agent 备料）
+- 新增任务类型 `shine.daily`：每天 20:45 入队，agent 生成后 API 通过企业微信推给 active 家人；每天指定一位家长说
+- 企业微信文本反馈 `说了 / 还没说 / 他笑了 / 他没啥反应 / 他不太想听 / 换我说` 走确定性处理，不经过模型；36 小时内有效
+- 数据模型新增 `shine_dailies` / `shine_daily_feedback`；种子新增 `sc_buding` / `sc_naicha`（每日轮换用，历史条目仍可用 `sc_default`）
+- `GET /api/shine/entries` 省略 `child_id` 从「默认孩子」改为「全部孩子」（网页档案；小程序已无闪光入口）
+- 小程序移除「闪光」tab（docs/09 决策 7）；网页 `/tools/shine/` 增加每日看见只读档案
+
 ## v1.5 变更记录（2026-11-11 · 看见闪光 + Agent AI 任务平面）
 
 - 新增站点侧「看见闪光」接口：entries 创建（**202 异步**，AI 由 agent 完成）/列表/详情/retry/更新（PATCH+POST）/软删（触发 redact）/feedback、`GET /api/ai/tasks/:id` 轮询、`GET /api/shine/growth`（读 agent 发布的视图）、`POST /api/shine/review`、导出（JWT）
 - 新增 agent 侧 AI 任务平面：claim（**长轮询 ≤25s**）/heartbeat/result/fail/恢复、`GET /api/agents/ai/entries/:id`（分析输入 + 图片签名 URL + analyze_context）、`PUT /api/agents/ai/views`（视图发布，commit_count 防回退）、artifacts 上传（X-Agent-Key）
-- 心跳新增可选 `ai_capabilities`（能力路由：无 wiki deploy key 的机器只报 analyze）
+- 心跳新增可选 `ai_capabilities`（能力路由：无 wiki deploy key 的机器报 analyze/daily，不报 wiki 类）
 - 数据模型新增 `shine_children` / `shine_entries` / `ai_tasks` / `ai_task_events` / `ai_artifacts` / `shine_views`；`printers` 增 `ai_capabilities` 列；**不建 wiki 表——API 零 wiki 原文**（ADR-008/009）
 - AI 执行与家庭 Wiki 记忆的设计全文见 docs/13-ai-agent-plan.md；产品/UX 见 docs/12-shine-plan.md
 

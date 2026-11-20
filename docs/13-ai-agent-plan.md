@@ -75,6 +75,7 @@
 | 任务/审计/产物 | API | 无家庭内容（payload 只有 ID 与引用） |
 | **Wiki 全文（画像/偏好/家庭背景/历史）** | **只在私有 GitHub 仓 + agent 本地** | **API 永远不存、不见、不转发** |
 | UI 看到的成长页数据 | API 存 **agent 封装后的视图**（`shine_views`） | agent 从 wiki 编译出 `growth` / `analyze_context` 才发布——API 只拿到成品 |
+| 每日看见卡 | API `shine_dailies`（缓存/展示）+ wiki `children/<id>/daily/`（agent 副本） | 卡片由 agent 生成；API 不存 wiki 全文 |
 
 关键决策：**API 默认不再直连 LLM，也不存任何 wiki 原文**。agent 不在线时条目照常保存、任务排队，等 agent 上线自动补上——不做静默降级成假结果。（保留 `CIJIAN_AI_MODE=inline` 作开发/应急开关，不默认启用。）
 
@@ -87,6 +88,7 @@
 | type | 触发 | 时限 | runner | 优先级 | 说明 |
 |---|---|---|---|---|---|
 | `shine.analyze` | 家长提交条目 | 180s | `opencode`（轻量 profile） | 10（最高） | 文字/图片 → praise/notice/listen 结果卡 |
+| `shine.daily` | 每天 20:45 定时 | 180s | `opencode`（轻量 profile） | 55 | 从当天打卡/观察/反馈生成每日卡；写 wiki 副本；API 推送 |
 | `shine.wiki.ingest` | analyze 成功后自动 | 300s | `opencode` | 50 | 把新证据并入 Wiki，更新 index/log/profile |
 | `shine.review.monthly` | 家长点「生成回顾」/月末 | 600s | `opencode` | 80 | 读 Wiki 出月度成长回顾（证据+不确定性） |
 | `shine.wiki.lint` | 每周定时 | 600s | `opencode` | 90 | 体检：引用缺失/矛盾/孤儿页/夸大 |
@@ -111,14 +113,14 @@ queued ──claim──▶ claimed ──start──▶ running ──result─
 - **重试**：`attempts < max_attempts`（analyze 2、ingest 3、review 3）时回到 queued，退避 30s。
 - **幂等**：`dedupe_key` 唯一索引，如 `shine.analyze:<entry_id>`；重复入队返回已有任务。retry 用新序号 `...:2`。
 - **长轮询**：`POST /api/agents/ai/tasks/claim` 无任务时挂起最多 25s 再 204——任务派发是即时的；执行延迟来自 opencode（analyze 预估 p50 8~15s、p95 ≤30s，M-B0 实测校准），前端按异步轮询设计（§6.1）。
-- **串行化**：`shine.wiki.*` / `shine.review.*` 标记 `serialized`——同类型只要有一单在 claimed/running，就不再派发下一单（§3.4 多 agent 场景的确定性保证）。- **链式**：`shine.analyze` 成功落库的**同一个事务**里入队 `shine.wiki.ingest`——编排归 API，agent 不需要懂业务链条。
+- **串行化**：写家庭 wiki 的任务同属一个 **wiki 组**（`shine.wiki.*` / `shine.review.*` / `shine.daily` / `assistant.wiki.write` / `assistant.skill.review`）——组内只要有一单在 claimed/running，就不再派发下一单（§3.4 多 agent 场景的确定性保证）。- **链式**：`shine.analyze` 成功落库的**同一个事务**里入队 `shine.wiki.ingest`——编排归 API，agent 不需要懂业务链条。
 - **失败语义**：analyze 失败 → 条目 `ai_status=failed`（可重试）；ingest/lint/review 失败 → 只记事件，绝不阻塞用户。
 
 ### 3.3 能力协商
 
 - agent 心跳新增 `ai_capabilities: {types: [...]}`，存入 `printers.ai_capabilities`（打印表兼作 agent 身份表）。
 - claim 请求带 `{types}`，API 只派双方交集的队列；无人能处理的任务排队并在管理端可见。
-- **能力按实际配置上报**：没配 wiki 仓/deploy key 的机器不报 `shine.wiki.*`，只报 `shine.analyze`——写记忆的权限跟着 key 走。
+- **能力按实际配置上报**：没配 wiki 仓/deploy key 的机器不报 `shine.wiki.*`，但报 `shine.analyze`/`shine.daily`——写记忆的权限跟着 key 走。
 
 ### 3.4 多 agent 并发（明确支持的场景）
 
@@ -126,7 +128,7 @@ queued ──claim──▶ claimed ──start──▶ running ──result─
 |---|---|
 | 抢任务 | claim 在 SQLite 事务里原子完成（`queued→claimed` CAS）；多台同时长轮询安全，谁抢到谁执行 |
 | analyze 并行 | 纯函数、无共享状态——多台机器就是横向扩容，吞吐 = 台数 × 各自并发 1 |
-| wiki 类串行 | `serialized` 类型全局同一时刻只有一单在跑（§3.2），从根上避免两台机器同时改 index.md/log.md |
+| wiki 类串行 | 写家庭 wiki 的任务同属一个 wiki 组，跨类型全局同一时刻只有一单在跑（§3.2），从根上避免两台机器同时改 index.md/log.md |
 | git 兜底 | wiki 任务执行前 `git pull --rebase`、push 被拒再 rebase 重试 ≤2 次——即使串行化被绕过也不烂仓 |
 | 视图防回退 | `PUT /api/agents/ai/views` 带 `commit_count`（`git rev-list --count HEAD`），API 只接受更大的值，旧视图后到不覆盖新视图（409）——wiki 原文始终不经 API |
 | 身份与审计 | `ai_tasks.agent_id` 记录执行者；每台 agent 独立 key、独立心跳/吊销 |

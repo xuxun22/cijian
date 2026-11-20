@@ -201,6 +201,11 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-21] feat | 口算「还没做」防谎报：answered_count + 未作答≥80% 不建错题不打卡
+
+vision 输出 answered_count；未作答 ≥80% 视为整页/大部分没做，删临时卷、不建错题、不打卡，
+回「还没做/还没做完」。真实视觉实测：空白 12 题与只写 2 题均正确拦截。试卷不受影响。
+
 ## [2026-11-21] fix | 自动分流 staging 竞态（扫描器抢先建卷）+ 双向纠错上线
 
 首次真实口算照片暴露 `UNIQUE constraint failed: papers.id`：worker 先建目录后建行，

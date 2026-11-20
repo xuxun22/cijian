@@ -188,6 +188,25 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-20] feat | 错题本第 3 步：微信「收卷」入口 + 预览/确认回路（api 侧）
+
+微信照片 +「收卷」→ 15 分钟窗口合成一份卷（paper_intake 幂等）→ files 1h 中转 →
+paper.ingest → 预览回微信（成功即删中转文件）→「入库/第N题没错/奶茶的」→ paper.confirm。
+vision 定为 deepseek/deepseek-flash（多模态实测通过：认出奶茶/3年级/第4单元/6题错2）。
+api 140 测试绿、agent 112 测试绿；待部署后走微信 E2E。
+
+## [2026-11-20] feat | 错题本第 2 步本地引擎：vision 识别 + 自动归属 + 预览文案
+
+`papers/ingest.py` + prompt `paper-ingest.md`：多页多图 → 严格 JSON → 归属三级
+（姓名→年级唯一→问）→ status=preview + 覆盖写题 + 原图归档 originals；CLI 可单卷联调。
+14 项单测，全量 110 项绿。未接微信入口/确认回路（第 3 步）。
+
+## [2026-11-20] feat | 错题本第 1 步上线：本地库 + AirDrop 图片扫描/多页分组
+
+`cijian_agent/papers/{store,watch}.py`，能力名 `papers`（已加入 agent.env handlers 并重启）。
+children 种子（布丁 2022/奶茶 2024，9/1 自动进级）、papers.db 迁移、Downloads 图片稳定判定、
+180s 多页分组、水位线 + reconcile 幂等；13 项单测，全量 96 项绿。详见 pages/papers-pipeline.md。
+
 ## [2026-11-20] decision | 错题本设计定稿（docs/17）：真相源=Mac mini，服务器仅≤7天缓存通道
 
 三决策确认：微信发图可（短途过服务器）、PDF 走企微文件消息直发（即发即删）、外部模型 API 可。

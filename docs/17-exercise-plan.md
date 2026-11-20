@@ -68,7 +68,7 @@ CREATE TABLE children (
 ```sql
 CREATE TABLE papers (
   id         TEXT PRIMARY KEY,           -- pp_…
-  child_id   TEXT NOT NULL REFERENCES children(id),
+  child_id   TEXT REFERENCES children(id), -- 识别/归属前为 NULL（第 1 步只建卷）
   subject    TEXT NOT NULL,              -- math | chinese | english
   source     TEXT,                       -- 卷头识别的卷名原文
   unit_no    INTEGER,                    -- 归一单元号（第4单元→4；期中/期末/专项→NULL）
@@ -76,6 +76,7 @@ CREATE TABLE papers (
   shot_at    TEXT,                       -- 拍摄/投递时间
   status     TEXT NOT NULL DEFAULT 'ingesting',  -- ingesting|preview|ready|failed|discarded
   stats      TEXT,                       -- JSON：{total, wrong}
+  files_dir  TEXT NOT NULL DEFAULT '',   -- 原图目录（inbox 分组 → 归属后迁 originals）
   created_at TEXT NOT NULL
 );
 
@@ -110,17 +111,33 @@ CREATE TABLE sheets (
 
 ## 5. 任务契约（走现有 ai_tasks 平面，worker 新增三类）
 
+### 入口（已实现，2026-11-20 第 3 步）
+
+微信连发照片后回**「收卷」**（或「收一下卷」「识别试卷」「这是试卷」「收错题」）：
+api 取该用户最近 15 分钟、未被消费的照片（`wecom_messages` + `paper_intake` 幂等标记），
+下载为 `files` 中转（**TTL 1h**），按发送顺序合成一份卷，入队 `paper.ingest`；
+识别成功回微信预览后**立即删除**服务器中转文件。用户再回「入库」「第2题没错」「奶茶的」
+→ `paper.confirm`（`paper_sessions` 记住最近一份卷）。
+
 ### paper.ingest
 ```
-payload: { source: "wecom"|"airdrop", wecom_media: [{url(签名,≤1h), name}…],
-           inbox_files: [路径…], requester }
-worker:  下载/读取图 → vision（付费档）→ 自动归属 → 切题判错 → 写 papers(status=preview)
-result:  { ok, paper_id, child, subject, unit, total, wrong: [{q_no, tag}…],
+payload: { source: "wecom", from_user, requester,
+           media: [{file_id}…] }            # file_id = api files 表（1h 中转）
+worker:  下载图 → 本地 inbox 分组 → vision（deepseek/deepseek-flash）→ 自动归属
+         → 切题判错 → 写 papers(status=preview)
+result:  { ok, paper_id, child_id, subject, unit, total, wrong,
            attribution: "name|grade|asked", text: 微信预览文案 }
 ```
-- 预览文案格式（微信）：`奶茶 · 三年级数学 · 第4单元测试：32 题错 5——分数口算×2、
-  周长×2、时间单位×1。回「入库」或告诉我哪里认错了。`
-- 用户纠错 → `paper.revise`（chat 意图分流，如「第②题没错」「是布丁的」）→ 改库 → ready。
+- 预览文案格式（微信）：`奶茶 · 3年级数学 · 第4单元：6 题错 2——乘法口诀×1、周长×1。
+  回「入库」或告诉我哪里认错了。`
+
+### paper.confirm
+```
+payload: { from_user, paper_id, wrong_off: [2], child_name: "奶茶" }
+worker:  wrong_off → 对应题 is_wrong=0；child_name → 归属并迁移原图；
+         归属仍未知 → 回一句追问（不落 ready）；否则 status=ready
+result:  { ok, paper_id, total, wrong, text: 「记好了：…」 }
+```
 
 ### paper.sheet（出卷）
 ```
@@ -196,8 +213,23 @@ result:  { ok, text }          # 本地查库，模板化回答
 ## 11. 实施顺序（走 dev 通道）
 
 1. agent：children 种子 + papers.db 迁移 + inbox 扫描（借 checkin 稳定判定模式）
+   - **2026-11-20 已落地**：`cijian_agent/papers/{store.py,watch.py}`，背景能力名 `papers`；
+     库 `<state>/papers/papers.db`，扫描 `~/Downloads` 图片（HEIC/JPG/PNG/WEBP），
+     mtime 间隔 ≤180s 聚成一份卷，页名 `p01__原名`，行 `status=ingesting` 等识别；
+     单测 13 项（分组/稳定/水位线/重启认领/年级成长）。
 2. agent：ingest worker + vision prompt + 归属规则（单测：归属/解析/幂等）
+   - **2026-11-20 已落地本地引擎**：`cijian_agent/papers/ingest.py` + prompt
+     `ai/prompts/paper-ingest.md`；多页多图 vision → 严格 JSON 校验 → 归属三级
+     （姓名/昵称 → 印刷年级唯一匹配 → asked）→ `status=preview` + 覆盖式写题
+     → 微信预览文案。归属确定后原图迁 `originals/<child>/<yyyy-mm>/<pp_id>/`。
+     本地联调：`python3 -m cijian_agent.papers.ingest <pp_id>`；14 项单测。
+     **待第 3 步**：微信发图入口、预览下发与「入库/改错」确认回路。
 3. api：wecom 图意图分流 + 临时媒体转发（≤1h sweeper）+ 企微文件消息发送
+   - **2026-11-20 已落地收集/确认通道**：微信「收卷」触发（15 分钟照片窗口、
+     `paper_intake` 幂等、`files` 1h TTL）→ `paper.ingest`；预览/确认走任务结果直发，
+     `paper_sessions` 记住最近一份卷；「入库/第N题没错/奶茶的」→ `paper.confirm`；
+     识别成功即删服务器中转文件。vision 固定 `deepseek/deepseek-flash`（多模态，实测可用）。
+     企微文件消息直发（出卷 PDF）仍属第 4 步。
 4. agent：sheet 参数解析 + 排版模板 + chrome PDF + 交付
 5. agent：paper.query + 微信剧本联调
 6. E2E：按 §10 DoD 逐条过

@@ -60,3 +60,18 @@ opencode run --standalone --format json --auto "只输出 ok" | tail -3
 - 看到「失败但没错误信息」，先查 stdout 事件流，再看 stderr；
 - 辅助任务（回顾、摘要、清理）默认独立模型，别和主对话抢资源。
 - 主对话模型与兜底模型不要选同一家（2026-11-20 起主 z.ai、兜底 deepseek），一家的额度打满不影响家人对话。
+
+## 症状（2026-11-20 视觉识别）：周额度也会打满
+
+错题本第 2 步联调时，`zai-coding-plan/glm-5.3-flash` 报：
+
+```
+provider.quota: Weekly/Monthly Limit Exhausted. Your limit will reset at 2026-11-20 22:50:23
+```
+
+同日备选也不可用：`google/gemini-3.8-flash` → `provider.no-route`（未配置该 provider 路由）；
+`opencode/nemotron-3.5-super-vl-free` → `provider.free-limit`（免费池共享，早已打满）。
+
+**结论**：视觉识别模型必须提前确认可用性；周额度按 provider 重置（不是按天），
+联调大任务前先跑一张图的最小调用。`CIJIAN_PAPERS_VISION_MODEL` 可单独指定，
+默认跟 `CIJIAN_AI_MODEL`；额度打满时不要反复重试（每次都会消耗一点并拖慢排障）。

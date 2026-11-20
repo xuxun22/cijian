@@ -1,5 +1,13 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-20] gotcha | 打卡分孩子上线即 crash loop：列迁移在 migrate() 之后
+
+M-C7 五仓上线（cijian/api/site/mp/agent），生产 api 秒崩：`no such column: child`。
+根因：`openDb()` 先 `migrate()`（建表+种子），新列 `ALTER` 却按旧习惯写在 migrate 之后 → 老库种子先跑。
+解法：依赖新列的 ALTER 必须放 `migrate()` 第一条。单测全新建库，永远测不出来；必须造「老表」验证。
+手动 `systemctl start cijian-deploy.service` 热修（不等 5 分钟后 timer），E2E 全过。
+见 [gotcha-migrate-order](pages/gotcha-migrate-order.md)。
+
 ## [2026-11-18] deploy | 生产机 reimage 完成（干净系统，Hermes 清除）
 
 备份 5.8MB（数据+env+配置+密钥，integrity ok）→ 爸爸重装 Ubuntu 24.04 并接入 Tailscale

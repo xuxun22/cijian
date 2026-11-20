@@ -65,6 +65,10 @@
   `POST /entries` 仍默认 `sc_default`，所以网页表单必须显式带 `child_id`。
 - **每日卡最终态是「家长说没说」**：`shine_daily_feedback` 以 (daily_id, user_id) 唯一；
   「他笑了」这类反应默认 `said=1`，避免家长只回反应时被当成没说。
+- **生日提醒（2026-11-21）**：`shine_children.birthday`（MM-DD）+ `birth_year`；每天 08:00–22:00
+  检查，**提前 7 天 + 当天**各发一条给 active 爸妈，`birthday_reminders(child_id,date,kind)` 幂等。
+  布丁 2015-12-21、奶茶 2017-10-11。注意 `birthday` 列的 ALTER 必须在 `migrate()` 种子之前
+  （老库否则 `no such column`，已加迁移顺序回归测试）。
 - **每日观察提示（2026-11-21）**：`shine_observation_prompts` 62 句、十领域，**加权 70/30**
   （情绪 23 / 好奇 23 / 责任 16 / 品德 8 = 70；财商 8 / 数字 6 / 表达 6 / 社交 4 /
   生活 3 / 审美 3 = 30）。每句带 `text`（最近留意）+ `ask`（可以聊）；按天确定性伪随机、

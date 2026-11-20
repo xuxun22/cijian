@@ -158,10 +158,20 @@ CREATE INDEX idx_checkin_media_preview ON checkin_media(preview_expires_at);
 
 ```sql
 -- 孩子（默认一个「孩子」；多孩子时 UI 才出现切换）
+-- 生日提醒幂等：同一孩子/同一天/同档（提前一周|当天）只发一次
+CREATE TABLE IF NOT EXISTS birthday_reminders (
+  child_id   TEXT NOT NULL,
+  date       TEXT NOT NULL,
+  kind       TEXT NOT NULL,                  -- week | day
+  sent_at    TEXT NOT NULL,
+  PRIMARY KEY(child_id, date, kind)
+);
+
 CREATE TABLE IF NOT EXISTS shine_children (
   id          TEXT PRIMARY KEY,              -- sc_…
   name        TEXT NOT NULL,                 -- 称呼，≤20
   birth_year  INTEGER,                       -- 可选，年龄段校准
+  birthday    TEXT NOT NULL DEFAULT '',      -- MM-DD（生日提醒；如 12-21）
   sort        INTEGER NOT NULL DEFAULT 0,
   active      INTEGER NOT NULL DEFAULT 1,
   created_at  TEXT NOT NULL,

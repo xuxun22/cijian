@@ -54,3 +54,12 @@
 - `tailscale ssh` 的 ACL 是按**用户名**授权的：本机 `ssh xuxun22@...` 被拒，`tailscale ssh ubuntu@...` 正常。
 - CI 用的 Tailscale authkey 会提示 deprecated（建议换 OAuth client），但当前可用。
 - 部署脚本用 `flock` 防重入；两台机器各自跑 timer 互不干扰。
+
+## gotcha：push 后两条部署路径会撞车（2026-11-20 实测）
+
+GitHub Actions「Deploy」和服务器 `cijian-deploy.timer` 都会在 push 后立即部署；
+并发启动时后一个 `docker compose up` 报
+`Conflict. The container name "/…_app-api-1" is already in use`，Actions 红叉，
+但 timer 通常已成功。判定标准：服务器 `git log -1` + `docker ps` healthy + `/api/health`，
+不要只看 Actions 状态（必要时重跑 Deploy 或等下一个 timer）。根治方向：二选一
+（停 Actions Deploy 或停 timer），待定。

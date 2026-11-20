@@ -100,3 +100,8 @@ M-C5 试运行一周（生产 agent 已于 2026-11-06 开 checkin：`CIJIAN_HAND
 whisper 分类正确 → 记录建档 → 归档 `2026-11-06_二胡练习_IMG_4985.mov`（原件 184MB 永久保留）→
 预览 6.7MB 14 分钟上云 ready。踩坑与修复：预览同步上传阻塞扫描（改后台线程+退避）、
 Node 300s requestTimeout 切断慢上传（放宽到 1 小时）、agent claim 遇 SSL 超时崩进程（改为只告警）
+
+2026-11-20 上线 M-C6 手动打卡：项目 **「每日口算」**（cp_math，字段 题数/错题）、**「跳绳」**（cp_rope，
+字段 个数/组数），`media_type=none`、全周，api `migrate()` 按固定 id 幂等种入；打卡入口三个——
+网页/小程序项目卡「打卡」按钮、微信对话（cap `checkins/do`/`undo`，按项目名）。统计新增
+`completion_rate`。注意系统没有孩子/成员维度，项目全家共享，靠项目名区分。

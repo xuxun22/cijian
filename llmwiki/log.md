@@ -201,6 +201,11 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-21] decision | 工具箱移除「看见闪光」卡片，仅留直链
+
+微信每日卡（今日看见）为唯一主入口；/tools/shine/ 保留为档案/补记直链，不再出现在 /tools/ 列表。
+docs/12 §0.7 IA 表同步。
+
 ## [2026-11-21] feat | 口算「还没做」防谎报：answered_count + 未作答≥80% 不建错题不打卡
 
 vision 输出 answered_count；未作答 ≥80% 视为整页/大部分没做，删临时卷、不建错题、不打卡，

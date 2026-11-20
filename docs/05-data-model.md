@@ -278,6 +278,7 @@ CREATE TABLE IF NOT EXISTS shine_dailies (
   say_this             TEXT NOT NULL DEFAULT '',
   lighter              TEXT NOT NULL DEFAULT '',
   ask_back             TEXT NOT NULL DEFAULT '',
+  deeper               TEXT NOT NULL DEFAULT '', -- 再聊深一点的问题
   avoid                TEXT NOT NULL DEFAULT '',
   observation_prompt   TEXT NOT NULL DEFAULT '',
   observation_options  TEXT NOT NULL DEFAULT '[]',

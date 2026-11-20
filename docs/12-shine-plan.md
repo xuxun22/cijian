@@ -65,7 +65,7 @@
 卡片字段（草案）：
 
 ```
-date, child_id, mode, headline, evidence, say_this, lighter, ask_back,
+date, child_id, mode, headline, evidence, say_this, lighter, ask_back, deeper,
 avoid, observation_prompt, observation_options[3], confidence, evidence_refs[]
 ```
 
@@ -82,8 +82,32 @@ avoid, observation_prompt, observation_options[3], confidence, evidence_refs[]
 轻一点：
 「那两道错题你自己回头改了，我看见了。」
 
+可以问一句：
+「你当时是怎么发现要回去改的？」
+
+再聊深一点：
+「你改的时候，是重新算了一遍，还是换了个方法？」
+
 明天可以留意：
 遇到不会的题，他是先自己试，还是马上叫人？
+```
+
+**只有完成数据的一天（notice：不硬夸，但有话聊）**
+
+```text
+【今日看见 · 奶茶】
+今天二胡练了约 1 分钟，口算也打了卡。
+
+可以说：
+「我看到你今天练了二胡，还打了口算卡。」
+
+可以问一句：
+「今天二胡练的是哪一段？」
+
+再聊深一点：
+「有没有哪一句练了几遍才顺？你当时怎么找到感觉的？」
+
+选一句问就行，不用都问。
 ```
 
 **没有素材的一天**
@@ -131,9 +155,9 @@ avoid, observation_prompt, observation_options[3], confidence, evidence_refs[]
 
 输入：日期、孩子称呼/年级、昨日/近 7 天打卡（项目、fields、时长、媒体）、本地试卷（`status=ready` 且已订正）、近 7 天闪光条目、wiki `next_observation`/表达偏好、最近 14 天反馈（说了吗/反应/孩子原话）。
 
-输出：`mode`、`headline`、`evidence`、`say_this`、`lighter`、`ask_back`、`avoid`、`observation_prompt`、`observation_options[3]`、`confidence`、`evidence_refs[]`；一张卡只写一个孩子、最多一件主要的事。
+输出：`mode`、`headline`、`evidence`、`say_this`、`lighter`、`ask_back`、`deeper`、`avoid`、`observation_prompt`、`observation_options[3]`、`confidence`、`evidence_refs[]`；一张卡只写一个孩子、最多一件主要的事。
 
-硬规则：只使用输入里的事实；没有过程证据就 `notice`，没有素材就 `invite`，家长输入显示难受就 `listen`；不写分数/排名、不比较兄弟姐妹、不推断动机/情绪、不编细节；没有 ≥3 次同类记录不说「进步」；同一主题/句式 7 天内不重复；`say_this` 具体、克制、像家人说话；`ask_back` 优先问「你当时是怎么想到/做到的」，把评价变成孩子的自我归因。
+硬规则：只使用输入里的事实；没有过程证据就 `notice`，没有素材就 `invite`，家长输入显示难受就 `listen`；不写分数/排名、不比较兄弟姐妹、不推断动机/情绪、不编细节；没有 ≥3 次同类记录不说「进步」；同一主题/句式 7 天内不重复；`say_this` 具体、克制、像家人说话；`ask_back` 与 `deeper` 必须具体到今天的活动，把评价变成孩子自己的归因；不要写「今天有两条记录/打卡显示」这种系统口吻；有媒体时长写「约 N 分钟」，不写「一段」。
 
 ### 0.6 反馈闭环
 
@@ -193,6 +217,9 @@ avoid, observation_prompt, observation_options[3], confidence, evidence_refs[]
 
 > **P1 实现状态（2026-11-20）**：代码完成，单测全绿；待部署后真机联调（企业微信实际推送、20:45 scheduler、21:30 跟催、反馈回执）。
 > P1 不包含打卡 chips / 试卷订正 / 语音（P2）。
+>
+> **P1.1（2026-11-20 晚）**：第一张测试卡只有完成数据时太单薄——`notice` 现在也必须有 `ask_back` + `deeper`，
+> 按活动给具体问题（二胡哪一段、口算哪题易错、跳绳哪组最累），并禁止「今天有两条记录」这种系统口吻。
 
 ### 0.11 与 v1 的关系
 

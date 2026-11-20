@@ -15,6 +15,9 @@
   小程序不再有闪光 tab，微信是主入口；网页 `/api/shine/daily` 只读档案。见 `docs/12 §0`。
 - **每日看见的素材**：当天打卡（按 `checkin_projects.child` 归属，不混家庭项目）+ 近 7 天打卡基线 +
   近 7 天手动观察 + `growth.next_observation` + 最近反馈；没有素材输出 `invite`，不硬夸。
+- **只有完成数据时，notice 不能只写一句描述**：必须给 `ask_back`（轻问题）+ `deeper`（过程/方法/难点），
+  按活动名选问题（二胡问哪一段/哪句卡、口算问哪题易错/怎么检查、跳绳问哪组最累/怎么找节奏）；
+  不要写「今天有两条记录」这种系统口吻。否则家长收到会觉得单薄、没法接着聊。
 - **孩子**：`shine_children` 种入 `sc_buding`/`sc_naicha`，每日按日期轮换；`sc_default` 保留给历史条目。
   网页手动记录现在可选孩子；`GET /api/shine/entries` 省略 `child_id` = 全部孩子。
 - **API 不持有模型 key 与 GitHub 凭证**；`ai_tasks` 只存 payload/结果/审计。家庭 wiki 原文只在
@@ -27,7 +30,7 @@
 - agent 侧：`cijian_agent/ai/worker.py` 能力线程；无 `wiki_deploy_key` 的机器不报 wiki 类任务，但仍报 `shine.analyze`/`shine.daily`（每日看见可生成，wiki 落档 best-effort）。
 - 模型只改文件；git commit/push 与视图发布由 worker 做（`shine-wiki` profile 禁 shell）。
 - 实测：文字 analyze 7~17s、图片 12s；wiki ingest/redact 各 ~6 分钟（可接受，异步）。
-- **P1 单测**：cijian-api 146 绿、cijian-agent 121 绿；site build / mp typecheck 绿（2026-11-20）。
+- **P1 单测**：cijian-api 146 绿、cijian-agent 122 绿；site build / mp typecheck 绿（2026-11-20）。
 
 ## 踩坑
 

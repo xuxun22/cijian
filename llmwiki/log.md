@@ -201,6 +201,13 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-21] fix | 自动分流 staging 竞态（扫描器抢先建卷）+ 双向纠错上线
+
+首次真实口算照片暴露 `UNIQUE constraint failed: papers.id`：worker 先建目录后建行，
+扫描器 reconcile 认领同一目录。改为先建行再下图，补回归测试。另补「第N题错了」
+（wrong_on）与「第N题没错」双向纠错。真实口算卷复测：84 题错 8、布丁归属、
+「收」后 ready + 11-21 口算打卡成功。
+
 ## [2026-11-21] feat | 错题本自动分流：照片 45s 静默识别（试卷/口算/其他），口算自动打卡
 
 微信照片不再需要「收卷」：photo_batches 到期自动 paper.ingest；vision 分 exam/oral/other，

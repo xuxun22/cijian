@@ -83,7 +83,21 @@
   回复「… 口算打卡成功（奶茶 · 11-21）」或「今天已经打过口算卡了」；打卡失败不推翻入库，
   回复里给出补救说法。
 - 新增 api 表 `photo_batches`；papers 表新增 `kind`（老库 `ALTER` 自动补，默认 exam）。
-- 测试：api 152、agent 130 全绿（含批次到期/下载失败释放/口算确认打卡/丢弃删卷）。
+- 测试：api 152、agent 132 全绿（含批次到期/下载失败释放/口算确认打卡/丢弃删卷）。
+
+## 坑：扫描器认领 vs 微信任务 staging 竞态（2026-11-21 实测）
+
+`paper.ingest` 原来先建 `papers/inbox/<pp_id>/` 再下载照片、最后建卷行；
+但 `PapersWatcher._reconcile` 每 30 秒会把「有目录没行」的 `pp_*` 目录当成残留认领，
+抢先插入同一 `paper.id`，worker 随后 `create_paper` 撞 `UNIQUE constraint failed: papers.id`。
+**修法**：先建卷行、再建目录/下图（扫描器看到 ingesting 行就跳过）；下载失败删行+删目录。
+回归测试 `test_paper_row_created_before_download` 固定这个顺序。
+
+## 纠错双向（2026-11-21）
+
+- 「第N题没错」→ `wrong_off`（is_wrong=0）；「第N题错了 / 算错了」→ `wrong_on`（is_wrong=1）；
+  两者都会把该题从 `uncertain` 移除，并重算 wrong。
+- 实测：84 题口算里第 21 题不确定，确认「收」后其余 8 题如实入库，口算打卡成功。
 
 ## 坑与决策
 

@@ -3,7 +3,7 @@
 ## [2026-11-20] feat | 每日看见 v1.6 P1 实现：shine.daily + 20:45 推送 + 反馈/跟催 + 网页档案
 
 api：`shine.daily` 任务、`shine_dailies`/`shine_daily_feedback`、scheduler 20:45、21:30 跟催、
-`GET /api/shine/daily`、agent 备料端点、微信确定性反馈。agent：`_daily`/`shine-daily-v1`、
+`GET /api/shine/daily`、agent 备料端点、微信确定性反馈。agent：`_daily`/`shine-daily-v2`、
 模型失败退观察任务、wiki best-effort 落档。site：每日看见档案 + 手动记录选孩子。mp：去掉闪光 tab。
 测试：api 146 / agent 122 绿，site build / mp typecheck 绿。见 [shine-ai-plane](pages/shine-ai-plane.md)。
 

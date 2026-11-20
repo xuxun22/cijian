@@ -151,7 +151,7 @@ avoid, observation_prompt, observation_options[3], confidence, evidence_refs[]
 - 同一主题/句式 7 天内不重复；`listen` 不靠数据推断，只由家长输入触发。
 - 每日卡不引用试卷题目原文/图片，只引用科目、单元、错题数、订正数。
 
-**`shine-daily-v1` prompt 要点**
+**`shine-daily-v2` prompt 要点**
 
 输入：日期、孩子称呼/年级、昨日/近 7 天打卡（项目、fields、时长、媒体）、本地试卷（`status=ready` 且已订正）、近 7 天闪光条目、wiki `next_observation`/表达偏好、最近 14 天反馈（说了吗/反应/孩子原话）。
 

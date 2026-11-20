@@ -10,7 +10,7 @@
 ## 关键事实
 
 - **v2 每日看见（2026-11-20 决策 + P1 实现）**：`shine.daily` 每天 20:45 由 scheduler 入队，
-  agent `_daily` 生成（`shine-daily-v1`），API 落 `shine_dailies` 并推给 active 爸妈；每天按日期
+  agent `_daily` 生成（`shine-daily-v2`），API 落 `shine_dailies` 并推给 active 爸妈；每天按日期
   指定一人「今天你来说」；微信回「说了 / 还没说 / 他笑了 / 换我说」走确定性意图；21:30 只跟催一次。
   小程序不再有闪光 tab，微信是主入口；网页 `/api/shine/daily` 只读档案。见 `docs/12 §0`。
 - **每日看见的素材**：当天打卡（按 `checkin_projects.child` 归属，不混家庭项目）+ 近 7 天打卡基线 +

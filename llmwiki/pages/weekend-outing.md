@@ -47,6 +47,12 @@
   内容没变就返回 `skipped`，不产生空 commit。
 - `outing.prefs` 只在 wiki deploy key 存在时才声明能力；否则任务留在队列，
   由下周六 `outing.suggest` 的兜底写补上。
+- **新增任务类型必须同时加进 `AiWorker.capabilities()`**：只加 API `TASK_TYPES`
+  会让任务永远停在 `queued`。本次 `outing.suggest` 就漏了（2026-11-21 实发时发现，
+  agent 重启后日志只有「AI 任务并发槽」、没有领取记录；修于 4a6a309）。
+- `CIJIAN_AI_MODEL` 的 GLM 周额度打满时报 `provider.quota: Usage limit reached`；
+  出门任务在 `~/.config/cijian/agent.env` 单独设 `CIJIAN_OUTING_MODEL=deepseek/deepseek-flash`
+  （实测 43s 出结果），不必等 5 小时额度重置。
 - 反馈路由放在 wecom 回调早期、纸类触发之后；普通文本不受影响
   （只有命中模式且存在可反馈的 outing 才接管）。
 - websearch 查询词只含公开信息；发给模型的输入含孩子年龄/称呼与反馈摘要

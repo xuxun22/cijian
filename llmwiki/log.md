@@ -201,6 +201,12 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-21] fix | 周六出门首发：补能力声明 + 出门模型切 deepseek
+
+`outing.suggest` 只加了 API TASK_TYPES，漏了 agent `capabilities()`，任务永远 queued；
+补声明后 agent 重启即领取。GLM 周额度打满导致首发失败，agent.env 增加
+`CIJIAN_OUTING_MODEL=deepseek/deepseek-flash`，43s 出 3 个选项并发给爸妈。
+
 ## [2026-11-21] feat | 周六出门偏好固化进家庭 wiki（反馈即写 + 下周六兜底）
 
 反馈落库后入队 `outing.prefs` → 追加 `family/assistant/outing.md`（手工区保留、

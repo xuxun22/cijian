@@ -333,6 +333,44 @@ CREATE TABLE IF NOT EXISTS shine_daily_feedback (
   scheduler 入队时补 `date=计划时间的上海日期`。
 - `ai_tasks.type` 新增 `shine.daily`（priority 55、maxAttempts 2、serialized）；`ai_capabilities` 增 `shine.daily`。
 
+### 周六出门建议（v1.7）
+
+> 设计见 docs/18。API 存最新建议与运营副本；**长期偏好真源在家庭 wiki**
+> `family/assistant/outing.md`（反馈一到即写，删腾讯云不丢）。
+> agent 报果带 `synced_feedback_ids`，API 把已固化的 `comment` 置空（`choice` 保留）。
+
+```sql
+CREATE TABLE IF NOT EXISTS outings (
+  id         TEXT PRIMARY KEY,              -- ou_…
+  date       TEXT NOT NULL,                 -- 周六 YYYY-MM-DD（Asia/Shanghai）
+  weather    TEXT NOT NULL DEFAULT '{}',    -- JSON {summary, indoor_recommended}
+  options    TEXT NOT NULL DEFAULT '[]',    -- JSON [{no,title,type,indoor,location,distance,cost,detail,why,source}]
+  status     TEXT NOT NULL DEFAULT 'sent',  -- sent | chosen | skipped
+  chosen_no  INTEGER,
+  task_id    TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(date)                              -- 同日重跑覆盖，保留 chosen_no
+);
+
+CREATE TABLE IF NOT EXISTS outing_feedback (
+  id         TEXT PRIMARY KEY,              -- of_…
+  outing_id  TEXT NOT NULL REFERENCES outings(id) ON DELETE CASCADE,
+  user_id    TEXT NOT NULL,
+  choice     INTEGER,                       -- 1-3
+  comment    TEXT,                          -- 自由文本（偏好来源）
+  created_at TEXT NOT NULL
+);
+```
+
+种子（幂等）：
+
+- `schedules` 新增 `sch_outing_suggest`：`weekly 6 08:30` → `outing.suggest`（Asia/Shanghai）；
+  scheduler 入队时补 `date=计划时间的上海日期`。
+- `ai_tasks.type` 新增 `outing.suggest`（priority 25、maxAttempts 2）、
+  `outing.prefs`（priority 26、maxAttempts 3，反馈后固化 wiki）。
+- `ai_capabilities` 增 `outing.suggest`；`outing.prefs` 仅在 wiki 可写时声明。
+
 ## 状态转换规则（api 实现依据）
 
 打卡媒体（v1.4）：
@@ -384,6 +422,7 @@ AI 任务（v1.5）：
 | 待指派媒体 | 14 天未处理 | sweeper 置 `dismissed`（v1.4） |
 | shine 软删条目 | 30 天 | sweeper 硬删（v1.5） |
 | `shine_dailies` / `shine_daily_feedback` | 永久（API 缓存；wiki 有同日副本） | 不做自动清理（v1.6） |
+| `outings` / `outing_feedback` | 永久（运营副本；长期偏好在家庭 wiki；comment 固化后置空） | 不做自动清理（v1.7） |
 | ai_artifacts `data/artifacts/` | 30 天（`expires_at`） | sweeper 物理删除 + 删行（v1.5） |
 | ai_tasks（终态） | 90 天 | sweeper 删除 + events 级联（v1.5） |
 

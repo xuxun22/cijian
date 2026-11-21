@@ -286,10 +286,31 @@ GET /api/agents/ai/shine/daily-input?date=YYYY-MM-DD          // X-Agent-Key：a
 ```
 
 - 任务 `shine.daily`（priority 55，`serialized`，maxAttempts 2）：scheduler 每天 20:45 入队，payload 带计划日的上海日期；agent 报果后 API 落 `shine_dailies`，并给 `wecom_users` 里 active 的家人各发一条文本。
+
 - 每天指定一位家长「今天你来说」，按日期轮换；另一人回「换我说」可改。家长回「说了 / 还没说 / 他笑了 / 他没啥反应 / 他不太想听」由 API 确定性处理，不经过模型；36 小时内有效。
 - 21:30 API 侧跟催一次：只发给指定的人、只在「已推送且没有任何反馈」时发，`app_state` 去重；不回不再催。
 - `mode` 四值：`praise`（有过程证据）/ `notice`（只描述）/ `listen`（先接住情绪）/ `invite`（无素材，给观察任务）。
 - API 不存 wiki 原文；每日卡由 agent best-effort 写家庭 wiki（`children/<id>/daily/<date>.md|json`），API 这份是缓存/展示。
+
+### 周六出门建议（v1.7）
+
+```
+GET /api/agents/ai/outing/input?date=YYYY-MM-DD               // X-Agent-Key：周六出门备料
+→ 200 { "date":"2026-11-21",
+        "children":[ { "name":"布丁","age":11 } ],
+        "history":[ { "date","chosen_no","chosen_title",
+                      "options":[ { "no","title","type","indoor" } ],
+                      "feedback":[ { "user","choice","comment" } ] } ] }   // 最近 6 次
+
+GET /api/agents/ai/outing/feedback-input?outing_id=ou_…       // X-Agent-Key：反馈固化
+→ 200 { "date","chosen_no","chosen_title","options","feedback" } | 404
+```
+
+- 任务 `outing.suggest`（priority 25，maxAttempts 2）：scheduler 每周六 08:30 入队（payload 带计划日）；
+  agent 联网搜索后报果，API 校验正好 3 个选项并落 `outings`，再发给 active 爸妈。
+- 任务 `outing.prefs`（priority 26，maxAttempts 3）：爸妈回复反馈后立即入队
+  （dedupe=`outingprefs:<feedback_id>`），agent 拉本次反馈并追加进家庭 wiki
+  `family/assistant/outing.md`；不推送任何微信文本。
 
 ## Agent 侧接口（X-Agent-Key）
 
@@ -497,6 +518,14 @@ token = base64url(`media_id.exp`) + HMAC-SHA256（同 `FILE_URL_SECRET`），有
 - 「完成」判定统一为**当天该项目有记录**（投递打卡仍由媒体自动建记录）；统计新增 `completion_rate`（已完成应打日/应打日）
 - 自动指派（AI 提示 / 唯一未完成）跳过 `media_type=none`，媒体不能被指派到手动项目
 - 部署时幂等种入两个手动项目：`cp_math` 每日口算（字段 题数/错题）、`cp_rope` 跳绳（字段 个数/组数）（固定 id，重复执行不重复插入）
+
+## v1.7 变更记录（2026-11-21 · 周六出门建议）
+
+- 新增 `GET /api/agents/ai/outing/input?date=`（X-Agent-Key，孩子年龄 + 最近 6 次选择/反馈）与 `GET /api/agents/ai/outing/feedback-input?outing_id=`（单次反馈）
+- 新增任务类型 `outing.suggest`（每周六 08:30，联网搜索上海当天亲子选项，推 3 个）与 `outing.prefs`（反馈后固化家庭 wiki）
+- 企业微信文本 `1/2/3`、`选N`、`都不想`、`反馈：……` 走确定性处理（只对今天/昨天刚发的最新一条生效；选完还能补反馈），不经过模型
+- 数据模型新增 `outings` / `outing_feedback`；长期偏好真源为家庭 wiki `family/assistant/outing.md`
+- `outing.prefs` 报果带 `synced_feedback_ids`；API 把已写进 wiki 的 comment 置空（choice 保留）
 
 ## v1.6 变更记录（2026-11-20 · 每日看见）
 

@@ -201,6 +201,18 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-21] feat | 周六出门偏好固化进家庭 wiki（反馈即写 + 下周六兜底）
+
+反馈落库后入队 `outing.prefs` → 追加 `family/assistant/outing.md`（手工区保留、
+历史区幂等/倒序/限 32 行）；下周生成把整页 `preferences` 与最近 6 次 `history`
+一起给模型，优先级 天气/安全 > 偏好 > 近期历史 > 通勤。api 172 / agent 143 测试绿。
+
+## [2026-11-21] feat | 周六出门建议 v1：每周六 08:30 推 3 个上海亲子选项
+
+联网搜索（只开 websearch、不挂家庭 MCP）→ 天气定室内外 → 按两个孩子筛选 → 类型多样化；
+爸妈回 1/2/3、「都不想」、「反馈：……」记偏好，历史 6 次作为下周输入。
+api 171 / agent 139 测试绿。详见 pages/weekend-outing.md 与 docs/18。
+
 ## [2026-11-21] feat | 生日提醒：提前 7 天 + 当天，08:00 发给爸妈（幂等）
 
 `shine_children` 补 `birthday`（MM-DD）与出生年（布丁 2015-12-21、奶茶 2017-10-11）；

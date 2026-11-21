@@ -12,6 +12,7 @@
 - [assistant-architecture](pages/assistant-architecture.md) — 家庭助手架构：微信回调→ai_tasks 任务平面→agent(opencode+MCP)→API 代发；三种身份与两个队列
 - [privacy-iron-law](pages/privacy-iron-law.md) — **铁律：腾讯云服务器不存任何家庭私密信息（≤7 天缓存通道可，判据=随时删服务器不丢数据）；真相源=Mac mini；checkin 预览为缓存、合规**
 - [papers-pipeline](pages/papers-pipeline.md) — 错题本（docs/17）：第 1 步已上线——本地 papers.db、AirDrop 图片扫描、180s 多页分组、年级自动成长
+- [weekend-outing](pages/weekend-outing.md) — 周六出门建议：每周六 08:30 推 3 个上海亲子选项（天气/档期/多样性/距离），回 1/2/3 与「反馈：…」；偏好即时固化家庭 wiki
 - [get-takeover](pages/get-takeover.md) — get 产品线（GitLab get-aico 9 仓）由 cijian agent 接管开发的调研结论与一期设计指针；get-dev 已停摆
 - [dev-plan-approval](pages/dev-plan-approval.md) — 编码通道计划先行 + 小程序开发看板；JWT/企微身份绑定、同毫秒排序坑
 - [env-and-secrets](pages/env-and-secrets.md) — 密钥与口令的存放位置、轮换方法

@@ -45,8 +45,12 @@ grep -ri "<任务关键词>" /Users/xuxun22/work/cijian/llmwiki/
    正文含 **症状 → 根因 → 解法 → 预防**，多用具体命令、路径、报错原文片段
 2. 在 `index.md` 对应分类下登记一行
 3. 向 `log.md` 追加 `## [YYYY-MM-DD] gotcha|howto|deploy | 一句话标题`
-4. **不要自行 commit/push**：条目留在 `cijian` 仓工作区，和当次代码改动一起在汇报 diff 时列出，
-   等爸爸回「提交」再提交（推送等「推送」）。本次只有沉淀条目时也一样：展示 diff 后等「提交」。
+4. **「提交」= commit + push 一起做**（2026-11-22 爸爸明确：提交 == git commit + git push）：
+   条目留在 `cijian` 仓工作区，和当次代码改动一起在汇报 diff 时列出；爸爸回「提交」后
+   **逐仓 commit 并 push**，接着确认 CI 绿、api 自动部署后抽查 health、改了 agent 代码则重启
+   agent。不存在单独的「推送」步骤，不要提「回『推送』我再推」。
+   改本 skill 时只改 `.opencode/skill/llmwiki/SKILL.md`（实际加载的），`llmwiki/SKILL.md`
+   只是指针，别往那儿写规则。
 
 ### 3. 整理（定期，自动，不要询问用户）
 

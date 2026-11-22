@@ -232,6 +232,13 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-22] decision | 「提交」= commit + push：修两份 SKILL.md 分叉导致的语义丢失
+
+爸爸要求「提交 == git commit + git push」长期未生效：死文件 llmwiki/SKILL.md 写着旧规则
+（commit && push），生效的 .opencode/skill/llmwiki/SKILL.md 在 1e254ad 被改成「推送等推送」。
+修复：生效 skill 改为「提交=commit+push+CI/部署/重启收尾」，死文件改指针，HOME 对齐。
+详见 pages/devflow-commit-push.md。
+
 ## [2026-11-22] feat | 打卡广播：孩子打卡记录新建时企微通知全体家长
 
 broadcastCheckin 服务 + 五入口接线（agent/网页/小程序/微信对话/认领改派），

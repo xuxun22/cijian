@@ -25,6 +25,8 @@
 
 - [devflow-push-main](pages/devflow-push-main.md) — **dev 通道 committed ≠ 上线**：旧终态只是本地分支；「提交」已升级为合并 main+push+各仓部署（push-main）
 
+- [devflow-commit-push](pages/devflow-commit-push.md) — **「提交」= commit + push**（含 CI/部署/agent 重启）；复盘两份 SKILL.md 分叉导致「提交只 commit」的根因与预防
+
 - [gotcha-compose-dollar](pages/gotcha-compose-dollar.md) — compose 对 env 文件做 `$` 插值，argon2 hash 需 `$$` 转义
 - [gotcha-bash-fullwidth](pages/gotcha-bash-fullwidth.md) — bash `$VAR` 紧邻全角字符导致 unbound variable
 - [gotcha-node-sqlite](pages/gotcha-node-sqlite.md) — better-sqlite3 在新 Node 上编译失败 → 迁移 node:sqlite 三连坑

@@ -34,6 +34,8 @@ time opencode run --standalone --format json --auto --model nonexistent/x "ok"
 
 1. **主对话模型切 deepseek/deepseek-flash**（`CIJIAN_AI_MODEL` 一行 + kickstart）：
    家庭对话多为短回复 + 工具轮，每轮省 ~4s；长文稍慢但占比低。chat_vision 已是 deepseek。
+   **→ 2026-11-22 12:56 已切**（agent.env：主对话+看图 = deepseek/deepseek-flash；
+   兜底+技能回顾 = zai-coding-plan/glm-5.3-flash，主/兜底不同家，glm 的固定税对后台任务无所谓）。
 2. glm 换流式 runner：改动大（runner 拿 streaming 事件），收益与 1 重叠，暂缓。
 3. 消息到达即预热 opencode 进程：复杂，先看 1 的效果。
 

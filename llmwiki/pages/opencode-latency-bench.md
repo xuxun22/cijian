@@ -28,7 +28,8 @@ time opencode run --standalone --format json --auto --model nonexistent/x "ok"
 #   opencode run --standalone --agent assistant-chat --model <m> --format json --auto
 ```
 
-（/tmp/opencode_bench.py：spawn→首事件 emit = wall - (now - 首事件 timestamp)。）
+（`latency_bench.py`：spawn→首事件 emit = wall - (now - 首事件 timestamp)。脚本与复现说明见
+[assets/opencode-bench](../assets/opencode-bench/README.md)。）
 
 ## 改进选项（按性价比）
 

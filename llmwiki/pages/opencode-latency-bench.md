@@ -39,6 +39,31 @@ time opencode run --standalone --format json --auto --model nonexistent/x "ok"
 2. glm 换流式 runner：改动大（runner 拿 streaming 事件），收益与 1 重叠，暂缓。
 3. 消息到达即预热 opencode 进程：复杂，先看 1 的效果。
 
+## 预启动 opencode 实测（2026-11-22 晚）
+
+结论：**技术上可行，但只省 ~0.7~1.1s/条**，不是当前主要瓶颈。三种跑法实测（同机、同一 home、
+31 个 MCP 工具、deepseek-flash，交替跑消除漂移）：
+
+| 跑法 | 「只输出 ok」 | 带图 | 说明 |
+|---|---|---|---|
+| 现状 `opencode run --standalone`（每任务新进程） | **1.5~1.9s** | 2.5~2.9s | 启动+MCP+CLI 全付 |
+| `opencode run --server <url>`（预启服务 + CLI 客户端） | 0.9~1.0s | 2.4~3.1s | CLI 自身仍要 ~0.9s |
+| HTTP API 直连预启服务（`/api/session` + `/api/session/{id}/prompt`） | **0.6~0.8s** | 1.9~2.6s | 最省，但要自己管会话/事件/中断 |
+
+- 预启服务本身：boot 0.17s，RSS **275~400MB**（另加 MCP 子进程）；`opencode serve` 打印
+  `server password`，鉴权是 **Basic `opencode:<password>`**（不是 Bearer）。
+- 会话完成信号：**没有 `session.idle` 事件**，要听 `session.execution.succeeded/failed/interrupted`。
+- 图片附件走 `files:[{uri:"file:///abs/path"}]`；传裸路径 400（`Invalid attachment URI`）。
+- 配置热更：改 `opencode.json` 后必须显式 `POST /api/location/reload`（~40ms）；靠文件 watch
+  自动重载会拖到 **4s**，不能依赖。
+- 每任务能力令牌（`CIJIAN_CAP_TOKEN`）和 `CIJIAN_USER_TEXT` 是写在 MCP 配置 env 里的，
+  预启服务下要「改配置 + reload」或改成 MCP 每次调用读上下文文件；并发两条任务会互相覆盖。
+
+**为什么暂不做**：一条典型对话 5~10s，其中模型首轮 ~0.7s + 每个工具轮 ~1.5~2s + 可能的
+search-retry 翻倍；预启动只能砍掉 ~1s 固定开销（~10~20%），却要引入会话生命周期、实验性 API、
+令牌轮换、并发串行化、400MB 常驻。性价比低于「砍重试轮/工具轮」。若以后做，优先
+`--server` 变体（改动小、保留 CLI 契约），不要直接上 HTTP API。
+
 ## 相关
 
 - [wechat-reply-latency](wechat-reply-latency.md)（整体延迟拆解）

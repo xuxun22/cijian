@@ -1,5 +1,12 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-22] howto | 预启动 opencode 实测：HTTP API 0.6~0.8s vs 现状 1.5~1.9s，只省 ~1s 暂不做
+
+`opencode serve` 可行（boot 0.17s，RSS 275~400MB）；`--server` CLI 变体只省 ~0.8s（CLI 自身 0.9s），
+HTTP API 直连最省但要管会话/事件/中断/令牌轮换，且 31 个 MCP 工具与并发会打架。
+典型对话 5~10s，固定开销只占 10~20%，性价比低于砍重试/工具轮。见
+[opencode-latency-bench](pages/opencode-latency-bench.md)。
+
 ## [2026-11-22] howto | opencode 延迟基准：启动 0.7s 无辜，glm-5.3-flash ~5s 固定首响应税是对话慢主因
 
 对照实验（坏模型/裸环境/无 MCP/带 MCP/长短生成）：opencode+MCP 共 ~1.4s；

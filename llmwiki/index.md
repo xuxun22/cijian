@@ -19,6 +19,8 @@
 
 ## 踩坑（gotcha）
 
+- [opencode-latency-bench](pages/opencode-latency-bench.md) — **opencode 启动只有 0.7s（含 MCP 1.4s），对话慢是 glm-5.3-flash 的 ~5s 固定首响应税**；deepseek 同环境 1.5s；附基准与测量方法
+
 - [wechat-reply-latency](pages/wechat-reply-latency.md) — **微信图片 ~1 分钟才有回复**：图片不进对话只走错题本（45s 防抖+vision），chat 模型从未接入看图；文字 15~30s=模型首轮 10~13s+重试翻倍；含 P0~P2 改进计划
 
 - [devflow-push-main](pages/devflow-push-main.md) — **dev 通道 committed ≠ 上线**：旧终态只是本地分支；「提交」已升级为合并 main+push+各仓部署（push-main）

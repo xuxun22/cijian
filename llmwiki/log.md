@@ -1,5 +1,11 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-22] howto | opencode 延迟基准：启动 0.7s 无辜，glm-5.3-flash ~5s 固定首响应税是对话慢主因
+
+对照实验（坏模型/裸环境/无 MCP/带 MCP/长短生成）：opencode+MCP 共 ~1.4s；
+zai 端点 glm 连「ok」都 5.6s+（生成快、首响应慢），deepseek 首响应 0.7s（长文生成慢）。
+建议主对话切 deepseek。见 [opencode-latency-bench](pages/opencode-latency-bench.md)。
+
 ## [2026-11-22] fix | papers 扫描停摆：reconcile 只查 ingesting，preview 卷目录保留致 UNIQUE 每轮炸
 
 AirDrop 卷进 preview 后目录保留（预览要用原图），known 缺席 → 每轮重复 INSERT 同 id →

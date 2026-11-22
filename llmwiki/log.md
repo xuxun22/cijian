@@ -355,3 +355,10 @@ AI 任务异常要补 markDevTaskFailed、能力面也要校验 dad 角色。
 papers 的 max(mtime,birthtime) 修法不够（birthtime 也被保留）。已修：arrival=max(三者)，
 并回拨 state.json last_seen 救回当天记录（23:30 归档 2026-11-20_二胡练习_IMG_5175.mov）。
 见 pages/gotcha-airdrop-mtime-watermark.md。
+
+## [2026-11-22] howto | AI 一次性工作区自动清理上线（命名白名单 + mtime 判龄，home 永保留）
+
+prepare_workspace 只建不删，agent 常驻数周目录一直堆。落地 runner.cleanup_workspaces：
+只删 `<agent>-<ms>-<pid>` 且超 7 天（CIJIAN_AI_WORKDIR_KEEP_DAYS 可调）的目录，symlink/
+home/不认识的名字不碰；worker 启动 + 任务后（节流 1h）触发。顺带确认 12:37 home 配置缺
+skills 是调试残留、13:31 真实对话已重写正常。见 pages/workdir-cleanup.md。

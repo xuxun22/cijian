@@ -46,3 +46,4 @@
 - [cijian-api-deploy](pages/cijian-api-deploy.md) — 生产部署拓扑（腾讯云 + Caddy + Tailscale + 5 分钟自拉取）与迁移步骤/坑
 - [shine-ai-plane](pages/shine-ai-plane.md) — 看见闪光 AI 平面 + v1.6 每日看见：API 任务队列（不调模型）+ agent opencode 执行 + 私有 wiki 记忆/视图发布 + 20:45 微信卡/反馈，含嵌套事务、wx 无 PATCH、wiki 组串行等坑
 - [opencode-runner](pages/opencode-runner.md) — agent 用 `opencode run` 做 AI 执行器的实测契约：JSON 输出在 `part.text`、`.opencode/agents/`（复数）profile、`--file` 附图、延迟基线、wiki deploy key 流程
+- [workdir-cleanup](pages/workdir-cleanup.md) — AI 一次性工作区自动清理：命名白名单正则只删 `<agent>-<ms>-<pid>`、目录 mtime 判龄、`CIJIAN_AI_WORKDIR_KEEP_DAYS`（默认 7 天）、启动+任务后节流 1h，home 永保留

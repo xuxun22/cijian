@@ -99,6 +99,27 @@
   两者都会把该题从 `uncertain` 移除，并重算 wrong。
 - 实测：84 题口算里第 21 题不确定，确认「收」后其余 8 题如实入库，口算打卡成功。
 
+## 口算误分类导致漏打卡（2026-11-22）
+
+**症状**：11-21 奶茶的「三上口算练习（12）」发图 → 预览说「回『收』入库」→ 回「收」后
+只回复「记好了：…全对」，没有「口算打卡成功」；`checkin_records` 里当天只有布丁，没有奶茶。
+
+**根因**：vision 把 75 道纯算式的口算卡判成 `kind=exam`（可能被姓名栏/页眉误导）。
+`paper.confirm` 只在 `kind=oral` 时调 `POST /api/agents/checkin/manual`，exam 分支只入库，
+所以不报错、也不打卡。
+
+**修复**：
+- prompt `paper-ingest.md`：标题含「口算/口算练习/计算练习/速算」→ `oral`，有卷头也算；
+  ≥20 题、≥85% 是 `calc` → `oral`。
+- `parse_payload()` 兜底：模型给 `exam` 但标题命中口算词或纯算式比例达标 → 自动改 `oral`；
+  `answered_count` 仍保留（用于「还没做」判定）。
+- API 确认词补 `存 / 存吧 / 存了 / 保存 / 保存吧`（用户口述「存」也能确认）。
+- 数据修复：补录 `2026-11-21` 奶茶 `每日口算`（`cr_fcf0f38c411c053c`）；
+  本地 `pp_21e5dd5b2a57fd3c` 的 `kind/stats.kind` 从 `exam` 改为 `oral`。
+
+**预防**：口算卡的「标题」比题型更可靠；只靠模型分类会偶发误判，必须有确定性兜底。
+排查时先看 `papers.kind` 和 `paper.confirm` result 的 `kind`，没有 `checkin` 字段基本就是走了 exam。
+
 ## 口算「还没做」防谎报（2026-11-21）
 
 - vision 对 `kind=oral` 额外输出 `answered_count`（真写了答案的题数，空着/只有印刷体不算）。

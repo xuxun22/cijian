@@ -201,6 +201,11 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-22] gotcha | 口算题卡被误判成 exam，确认后没打口算卡
+
+11-21 奶茶 75 题口算 preview 成 exam → 回「收」只入库、无打卡。修复：prompt + parse_payload
+按标题/纯算式比例兜底纠正为 oral；确认词补「存」；补录 11-21 奶茶打卡。详见 papers-pipeline。
+
 ## [2026-11-21] fix | 周六出门首发：补能力声明 + 出门模型切 deepseek
 
 `outing.suggest` 只加了 API TASK_TYPES，漏了 agent `capabilities()`，任务永远 queued；

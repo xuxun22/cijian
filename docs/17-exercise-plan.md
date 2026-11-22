@@ -139,19 +139,28 @@ vision 先分类 `kind = exam | oral | other`：
 ```
 payload: { source: "wecom"|"wecom-auto", from_user, requester,
            silent_other: true,              # 自动分流时 other 不回消息
+           note?: "随图文字",                # 第一张照片前 1 分钟内同一用户的文本（归属线索）
            media: [{file_id}…] }            # file_id = api files 表（1h 中转）
 worker:  下载图 → 本地 inbox 分组 → vision（deepseek/deepseek-flash）
          → kind 分类 → 归属/切题判错 → 写 papers(kind, status=preview)
 result:  { ok, kind, paper_id, child_id, subject, unit, total, wrong,
-           attribution: "name|grade|asked", text: 微信预览文案 }
+           attribution: "name|note|grade|note_grade|asked", text: 微信预览文案 }
 ```
+- 归属顺序：卷面姓名 → 随图文字里的孩子名（「奶茶的」）→ 印刷年级唯一匹配 →
+  随图文字里的年级唯一匹配（「三年级口算」「三上」）→ 问一句。家长嘴里的年级
+  就是归属线索，别浪费（2026-11-22 太太说明了「3年级」还被追问是谁的）。
 - 预览文案格式（微信）：试卷 `奶茶 · 3年级数学 · 第4单元：6 题错 2——…回「收」入库；回「不收」丢掉。`
   口算 `这是奶茶的口算：12 题错 3——口诀×2、除法×2…回「收」= 记错题 + 今天口算打卡；回「不收」= 丢掉。`
+- 口算不确定题（认不出孩子写的答案）：**报算式原文，不报题号**——口算卡常不印题号，
+  模型自编的序号家长对不上卷面；有认不出的题时不说「全对」，改说「N 题里认出的 M 题全对」。
 
 ### paper.confirm
 ```
-payload: { from_user, paper_id, discard?: true, wrong_off: [2], child_name: "奶茶" }
+payload: { from_user, paper_id, discard?: true, wrong_off: [2], child_name: "奶茶",
+           wrong_off_stems: ["54÷6"],     # 按算式指题（口算卡没印刷题号）
+           wrong_on_stems: ["45÷9"] }     # 「45÷9错了」「36+27=5 不对」
 worker:  discard → 删本地卷与原图；wrong_off → 对应题 is_wrong=0；child_name → 归属并迁移原图；
+          算式按「等号左边归一」对题（45÷9 / 45÷9= / 45÷9=5 都算同一题）；
          归属仍未知 → 回一句追问（不落 ready）；否则 status=ready。
          kind=oral 且确认成功 → 调 api 手动打卡「每日口算」（当日幂等），回复打卡结果。
 result:  { ok, paper_id, kind, child_name, total, wrong, checkin?, text: 「记好了… 口算打卡成功」 }

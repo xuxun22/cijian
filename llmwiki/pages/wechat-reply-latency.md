@@ -30,10 +30,15 @@
 - agent → api.whereami.cn（腾讯云美国圣克拉拉）领取偶发 502/read timeout，退避指数到 60s。日志累计 9642 条领取异常：11-11~14 每天 3000+（迁移前），近期 4~43/天。
 - 图片中转文件下载走同一慢链路，是 vision 任务 92~190s 的主要嫌疑。
 
-## 顺手发现的 bug（未修）
+## 顺手发现的 bug（已修，2026-11-22）
 
-- 11-21 21:15~21:17 papers 投递扫描循环每 30s 报 `UNIQUE constraint failed: papers.id`。
-- 11-20 16:56 photo auto 分流出现过同因 failed task（paper_intake 幂等没兜住并发）。
+- **papers 投递扫描循环每 30s 报 `UNIQUE constraint failed: papers.id`（11-21 21:15 起）**：
+  根因是 `PapersWatcher._reconcile` 的 known 只查 `status='ingesting'`，而 AirDrop 卷进 preview 后
+  **目录保留**（预览要用原图）→ 每轮重复 INSERT 同 id → 异常炸掉整轮扫描，**AirDrop 投递管线停摆**。
+  修复：known 覆盖所有状态（`list_papers()` 不带 status），回归测试
+  `test_reconcile_skips_dirs_with_row_in_any_status`。agent 992a6be。
+- 11-20 16:56 photo auto 分流出现过同因 failed task（paper_intake 幂等没兜住并发）——本次改造后
+  收集路径统一走 `pendingPaperImages` + 用户级互斥，该场景已覆盖；如再现有新证据再查。
 
 ## 解法 / 改进计划
 

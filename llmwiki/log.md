@@ -1,6 +1,11 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
-## [2026-11-22] feat | 图片 P0 落地：单图 8s 快速通路 + 对话看图 + 预下载前置（待部署）
+## [2026-11-22] fix | papers 扫描停摆：reconcile 只查 ingesting，preview 卷目录保留致 UNIQUE 每轮炸
+
+AirDrop 卷进 preview 后目录保留（预览要用原图），known 缺席 → 每轮重复 INSERT 同 id →
+异常炸掉整轮扫描，投递管线停摆。修复：known 覆盖所有状态 + 回归测试。agent 992a6be。
+
+## [2026-11-22] feat | 图片 P0 落地：单图 8s 快速通路 + 对话看图 + 预下载前置（已部署）
 
 api：自适应防抖（首图 8s/多页 45s）、首图即时回执、预下载中转、`consumePhotoForChat`
 （对图说话→图归对话）、收卷/tick 复用预下载 + 用户级互斥；agent：`CIJIAN_CHAT_VISION_MODEL`

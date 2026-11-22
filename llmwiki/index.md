@@ -19,6 +19,8 @@
 
 ## 踩坑（gotcha）
 
+- [wechat-reply-latency](pages/wechat-reply-latency.md) — **微信图片 ~1 分钟才有回复**：图片不进对话只走错题本（45s 防抖+vision），chat 模型从未接入看图；文字 15~30s=模型首轮 10~13s+重试翻倍；含 P0~P2 改进计划
+
 - [devflow-push-main](pages/devflow-push-main.md) — **dev 通道 committed ≠ 上线**：旧终态只是本地分支；「提交」已升级为合并 main+push+各仓部署（push-main）
 
 - [gotcha-compose-dollar](pages/gotcha-compose-dollar.md) — compose 对 env 文件做 `$` 插值，argon2 hash 需 `$$` 转义

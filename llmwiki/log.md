@@ -1,5 +1,18 @@
 # 时间线（最新在前 · 追加式，勿改写历史条目）
 
+## [2026-11-22] feat | 图片 P0 落地：单图 8s 快速通路 + 对话看图 + 预下载前置（待部署）
+
+api：自适应防抖（首图 8s/多页 45s）、首图即时回执、预下载中转、`consumePhotoForChat`
+（对图说话→图归对话）、收卷/tick 复用预下载 + 用户级互斥；agent：`CIJIAN_CHAT_VISION_MODEL`
+带图切模型、`recent_file_id`→附件、other 不再静默。缩图未做（识别质量风险，见条目）。
+api 183 / agent 154 绿。见 [wechat-reply-latency](pages/wechat-reply-latency.md)。
+
+## [2026-11-22] gotcha | 微信回复慢调查：图片无对话通路 + 45s 防抖 + 慢链路，改进计划 P0~P2
+
+图片 ~1 分钟 = 45s 静默防抖 + vision 12~190s，且 chat 模型从未接入看图（回「看不到内容」）；
+文字 15~30s = glm-5.3-flash 首轮 10~13s + 重试翻倍；家宽↔美国链路偶发 502 再 +60s。
+见 [wechat-reply-latency](pages/wechat-reply-latency.md)。
+
 ## [2026-11-20] feat | 每日看见 v1.6 P1 实现：shine.daily + 20:45 推送 + 反馈/跟催 + 网页档案
 
 api：`shine.daily` 任务、`shine_dailies`/`shine_daily_feedback`、scheduler 20:45、21:30 跟催、

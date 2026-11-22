@@ -127,6 +127,18 @@ agent: ffmpeg 转码预览 —— 视频 480p/H.264/~250kbps/faststart（长视�
 - streak = 以日历日连续的「完成」天数（当天未打不断历史，只是 streak 归零重算向后看）。
 - 完成率 `completion_rate` = 窗口内「已完成应打日 / 应打日」（应打日 = `days_of_week` 命中的日期，0~1）。
 
+### 4.7 打卡广播（2026-11-22）
+
+记录**新建**时（`manualCheckin created` / `attachMedia created`）企微文本广播给家长：
+
+- 收件人 = 活跃成员里 `role != 'child'` 的（NULL 算家长，孩子不打扰）；入口全覆盖：
+  网页/小程序打卡按钮、微信对话 `checkins/do`、agent 媒体上报、web/mp 认领与改派、
+  口算照片确认自动打卡。
+- 文案：`奶茶 打卡：每日口算（2026-11-22），已连续 3 天。`（媒体打卡带「视频/录音已收到」；
+  streak ≥2 才带连续天数）；每条落 `wecom_messages`（`task_id=checkin:<record_id>`）可追溯。
+- 幂等：同项目同日第二次打卡（补段媒体/重复打卡）不广播；撤销暂不广播。
+- 发送失败只记日志，不影响打卡本身；`services/checkinBroadcast.ts`，无企微配置时静默跳过。
+
 ## 5. 对各仓的影响
 
 | 仓 | 改动 | 里程碑 |

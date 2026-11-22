@@ -115,6 +115,13 @@ Node 300s requestTimeout 切断慢上传（放宽到 1 小时）、agent claim �
 迁移幂等：ALTER 加列 + 按名字回填（每日阅读→布丁、二胡练习→奶茶）+ INSERT OR IGNORE 双胞胎。
 cap `checkins/do|undo` 带 `child`，同名不带 → 400 列可选孩子；网页按孩子分组、mp 卡名带前缀。
 
+2026-11-22 打卡广播：记录新建时（manualCheckin/attachMedia 的 `created`）→
+`broadcastCheckin`（services/checkinBroadcast.ts）发企微文本给家长（`role != 'child'`，
+NULL 算家长），文案带 streak（≥2 才显示），`attachMedia` 多了 `created` 返回字段；
+五个入口全部接上（agent manual/media、web+mp 按钮与认领改派、微信对话 cap）。
+幂等与打卡一致（同日第二次不广播）；撤销不广播；发送失败不影响打卡。
+测试注入 fake client（paper loop 同款模式），checkin 25 项含广播 3 项。
+
 **上线踩坑（同日热修）**：`child` 的 ALTER 最初写在 `openDb()` 里（`migrate()` 之后），老库启动时种子先跑
 → `no such column: child`、容器 crash loop。列迁移必须放 `migrate()` 第一条；详见
 [gotcha-migrate-order](gotcha-migrate-order.md)。

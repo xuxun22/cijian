@@ -232,10 +232,16 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-22] feat | 打卡广播：孩子打卡记录新建时企微通知全体家长
+
+broadcastCheckin 服务 + 五入口接线（agent/网页/小程序/微信对话/认领改派），
+role=child 不发、同日幂等、streak ≥2 带连续天数；attachMedia 加 created 返回值。
+详见 pages/checkin-pipeline.md。
+
 ## [2026-11-22] gotcha | 口算预览三连坑：随图说明没进管线、题号是模型自编的、「全对」无视认不出的题
 
 太太说明「3年级」还被追问归属。修复：note 随 paper.ingest 带走（api recentPaperNotes）、
-归属加 note 名字/年级两级、口算不确定题报算式原文 + 支持按算式纠错（wrong_*_stems）、
+归属加 note 名字/年级两级、口算错题与不确定题均列「第N题 算式」明细 + 题号/算式双路纠错、
 有 uncertain 不说「全对」。详见 pages/papers-pipeline.md。
 
 ## [2026-11-22] gotcha | 口算题卡被误判成 exam，确认后没打口算卡

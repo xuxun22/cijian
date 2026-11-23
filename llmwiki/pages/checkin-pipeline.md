@@ -122,6 +122,13 @@ NULL 算家长），文案带 streak（≥2 才显示），`attachMedia` 多了 
 幂等与打卡一致（同日第二次不广播）；撤销不广播；发送失败不影响打卡。
 测试注入 fake client（paper loop 同款模式），checkin 25 项含广播 3 项。
 
+2026-11-23 口算打卡带题数/错题：agent `/api/agents/checkin/manual` 增加 `fields` 参数
+（manualCheckin 后 mergeRecordFields，**created=false 也 merge**——已打过卡可补填/更正，
+也是回填历史记录的路径）；口算照片确认自动打卡传 `problem_count/wrong_count`，
+小程序「字段」区直接显示；广播文案带字段摘要（label 取自 fields_schema，
+如「题数 75、错题 3」）。字段 key 依赖种子 schema（cp_math*/problem_count/wrong_count），
+改 schema 要同步 worker `_paper_confirm`。
+
 **上线踩坑（同日热修）**：`child` 的 ALTER 最初写在 `openDb()` 里（`migrate()` 之后），老库启动时种子先跑
 → `no such column: child`、容器 crash loop。列迁移必须放 `migrate()` 第一条；详见
 [gotcha-migrate-order](gotcha-migrate-order.md)。

@@ -232,6 +232,18 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-23] feat | 口算自动打卡带题数/错题：agent /manual 收 fields（created=false 也 merge），小程序字段区显示，广播文案带摘要
+
+agent /api/agents/checkin/manual 加 fields 参数 + worker 确认时传 problem_count/wrong_count +
+checkinBroadcastText 按 fields_schema 渲染「题数 75、错题 3」。已回填路径：重复 POST /manual。
+详见 pages/checkin-pipeline.md。
+
+## [2026-11-23] gotcha | 布丁口算识别失败三连：vision 偶发空输出无重试、话术「没认成」不可懂、chat 看图后缀 bug 必挂
+
+_fetch_chat_image 写无扩展名路径却返回 .jpg 路径（File not found，83726c5 起带图对话全挂）；
+paper.ingest maxAttempts 1→2；失败话术改人话；test_dev_commits 固定日期腐烂改相对时间。
+详见 pages/papers-pipeline.md。
+
 ## [2026-11-22] decision | 「提交」= commit + push：修两份 SKILL.md 分叉导致的语义丢失
 
 爸爸要求「提交 == git commit + git push」长期未生效：死文件 llmwiki/SKILL.md 写着旧规则

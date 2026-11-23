@@ -232,6 +232,12 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-23] feat | 微信意图路由登记表（routes/intents.ts 六条意图）+ chat 错题工具兜底（paper_wrongs/paper_review_sheet）
+
+命令走确定性规则、问题走工具：正则漏掉的错题问题由 chat 调 paper_wrongs 兜底，
+不许编；出卷经能力面入队避免嵌套 opencode。测试 agent 196 / api 193。
+详见 pages/papers-pipeline.md。
+
 ## [2026-11-23] feat | 错题闭环三层落地：答案留存 + wrong_items 聚合 + 复习卷（原题/变式/答案键）+ 拍照判分回写 + D+1/3/7 提醒 + 看见联动
 
 questions.child_answer（不存正确答案，算式本地求值）；wrong_items 跨卷去重（norm_stem，

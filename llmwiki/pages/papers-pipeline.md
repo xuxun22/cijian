@@ -121,6 +121,19 @@
 **预防**：口算卡的「标题」比题型更可靠；只靠模型分类会偶发误判，必须有确定性兜底。
 排查时先看 `papers.kind` 和 `paper.confirm` result 的 `kind`，没有 `checkin` 字段基本就是走了 exam。
 
+## 微信意图路由：登记表 + chat 工具兜底（2026-11-23）
+
+- **路由登记表**（api `routes/intents.ts`）：六条文本意图集中声明、顺序即优先级——
+  `paper.ingest`（收卷）→ `paper.confirm`（收/不收/第N题/算式）→ `paper.query`（错题查询）
+  → `paper.sheet`（出复习卷）→ `daily.feedback`（每日看见）→ `outing.feedback`（出门）；
+  都不中才落 `chat.reply`。新增意图 = 加一行 + 原句回归测试；测试固定了顺序。
+- **chat 工具兜底**（agent `mcp_server.py`）：`paper_wrongs`（本地 papers.db 直读，
+  与 paper.query 同文案）与 `paper_review_sheet`（POST 能力面 `/api/assistant/cap/papers/sheet`
+  → 入队 paper.sheet，避免在 chat 里嵌套 opencode）。提示词硬规则：问错题必须先调工具、
+  不许拿打卡记录编（2026-11-23 实测「汇总下最近布丁错的题」没命中正则，chat 编了
+  「具体哪几道没记」——现在正则命中走快路，漏了也有工具兜底）。
+- 原则：**命令走确定性规则，问题走工具**；破坏性操作（收/丢弃/纠错）永不交给模型。
+
 ## 错题闭环：答案留存 + 复习卷 + 提醒 + 看见（2026-11-23）
 
 - **答案留存**：`questions.child_answer`（孩子最终作答原文，≤120 字；应用题存答句结论，

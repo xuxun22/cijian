@@ -122,6 +122,10 @@ CREATE TABLE sheets (
 
 ## 5. 任务契约（走现有 ai_tasks 平面，worker 新增三类）
 
+> 微信文本意图由 `routes/intents.ts` 登记表按序分发（收卷 → 确认/纠错 → 查询 → 出卷 →
+> 每日看见 → 出门），都不中才落 `chat.reply`；chat 侧另有 `paper_wrongs` /
+> `paper_review_sheet` 两个 MCP 工具兜底（规则漏掉的错题问题由模型调工具，不许编）。
+
 ### 入口（已实现，2026-11-20 第 3 步；2026-11-21 自动分流）
 
 **自动分流（默认）**：微信发照片后不再需要「收卷」——服务器把照片挂进 `photo_batches`，

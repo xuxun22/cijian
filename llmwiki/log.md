@@ -232,6 +232,19 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-23] feat | 错题闭环三层落地：答案留存 + wrong_items 聚合 + 复习卷（原题/变式/答案键）+ 拍照判分回写 + D+1/3/7 提醒 + 看见联动
+
+questions.child_answer（不存正确答案，算式本地求值）；wrong_items 跨卷去重（norm_stem，
+同卷不重复计数，backfill 回填历史）；paper.sheet：4 原题+4 变式 PDF（Chrome）→ 企微
+sendFile 内存直传；卷首 #id8 回传关联→确认后 mastery 流转；sch_paper_review 19:00 巡检广播；
+shine.daily 输入附加 papers 摘要。测试 agent 195 / api 192。
+详见 pages/papers-pipeline.md。
+
+## [2026-11-23] feat | paper.query 上线：微信一句话查错题（孩子/时间窗确定性解析，本地查库模板化回答）
+
+「布丁这周错了什么」→ parsePaperQuery（孩子+days）→ paper.query → papers/query.py 按卷列
+「第N题 算式」+ 标签 top4；只算 ready、按 shot_at 滤窗。详见 pages/papers-pipeline.md。
+
 ## [2026-11-23] feat | 口算自动打卡带题数/错题：agent /manual 收 fields（created=false 也 merge），小程序字段区显示，广播文案带摘要
 
 agent /api/agents/checkin/manual 加 fields 参数 + worker 确认时传 problem_count/wrong_count +

@@ -121,6 +121,37 @@
 **预防**：口算卡的「标题」比题型更可靠；只靠模型分类会偶发误判，必须有确定性兜底。
 排查时先看 `papers.kind` 和 `paper.confirm` result 的 `kind`，没有 `checkin` 字段基本就是走了 exam。
 
+## 错题闭环：答案留存 + 复习卷 + 提醒 + 看见（2026-11-23）
+
+- **答案留存**：`questions.child_answer`（孩子最终作答原文，≤120 字；应用题存答句结论，
+  不存整篇过程）。正确答案不存——查答案时纯算式用 `papers/calc.py` 确定性求值，
+  复习卷的答案键在出卷时算好存 `sheets.spec`。
+- **跨卷聚合**：`wrong_items`（UNIQUE(孩子, 归一题干)，`norm_stem` 取等号左边）——
+  `confirm_paper` 时 upsert，同卷重复 confirm 不重复计数（last_paper_id）；
+  历史卷用 `python3 -m cijian_agent.papers.backfill` 回填（幂等，先 --dry-run）。
+- **复习卷**（`paper.sheet`）：选题（mastery<2，错得多/久没碰优先，默认 4 道）→
+  LLM 出 4 道同结构变式+答案 → A4 HTML 原题/变式标签 → Chrome PDF →
+  `POST /api/agents/papers/sheets/:id/content` 内存直传 → 企微 `sendFile`。
+  卷首印 `复习卷 #<id8>`；**PDF 不落服务器盘**（隐私铁律）。
+- **回传判分**：识别时标题里的 #id8 关联 sheets 并直接用卷子归属（attribution=sheet）；
+  回「收」→ `apply_review_result`：原题+变式全对 mastery+1（D+3、D+7，满 2 毕业），
+  有错 mastery=0、wrong_times+1、明天再来。
+- **提醒**：schedule `sch_paper_review` 每天 19:00 → agent 巡检到期 → 广播家长；
+  无到期空文本不打扰。
+- **看见联动**：`shine.daily` 输入附加 `papers`（近 3 天错题摘要+到期数），提示词允许
+  挑**一条**具体说（如「小数除法又错两道，都是商的小数点」）。
+- 测试：agent 195（calc/norm/answer/聚合/复习卷/回写/提醒/看见上下文）、api 192。
+
+## paper.query：微信一句话查错题（2026-11-23）
+
+- api `parsePaperQuery`（确定性，不走模型）：必须同时含「错题/错了什么」+ 查询语气词，
+  解析孩子（布丁/奶茶，可空=全部）与时间窗（本周 7 / 本月 30 / 全部 3650）→
+  `paper.query` 任务（不串行，WAL 读不阻塞 ingest）。
+- agent `papers/query.py`：查 `status=ready` 且 `COALESCE(shot_at,created_at)` 在窗内的卷，
+  按卷列「第N题 算式」（≤8 题/卷），附标签统计 top4；无指定孩子分孩子两段。
+- 文案示例（真实数据）：`布丁近 7 天错题：5 份材料错 17 题。\n- 11/23 计算练习（6）75 题错 3：…`
+- 注意：**只算 status=ready**——preview（没回「收」）不计入；时间窗用 shot_at 不是建卷时间。
+
 ## vision 偶发空输出 + 失败话术不可懂 + 追问连锁失败（2026-11-23）
 
 **症状**：爸爸 19:48 发布丁口算照片 → 回「这次没认成。照片我先留一会儿，重新发一次再回『收卷』。」

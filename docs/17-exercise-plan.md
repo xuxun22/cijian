@@ -93,16 +93,27 @@ CREATE TABLE questions (
   wrong_count INTEGER NOT NULL DEFAULT 1, -- 同题去重后累计（二期）
   mastery     INTEGER NOT NULL DEFAULT 0, -- 0 未掌握 | 1 复习过 | 2 已毕业（二期）
   page_no     INTEGER, page_ref TEXT,    -- 原卷图定位（一期整页缩略卡用）
+  child_answer TEXT NOT NULL DEFAULT '', -- 孩子最终作答原文（口算得数/答句结论；2026-11-23）
   created_at  TEXT NOT NULL,
   UNIQUE(paper_id, q_no)                 -- 幂等：重识别不重入库
+);
+
+-- 跨卷聚合错题本（复习闭环真相源；2026-11-23）：UNIQUE(孩子, 归一题干)
+CREATE TABLE wrong_items (
+  id, child_id, subject, stem_norm, stem, tags, child_answer,
+  wrong_times, mastery,                  -- 0 未掌握 | 1 复习中 | 2 毕业
+  last_paper_id, last_wrong_at,          -- 同卷重复 confirm 不重复计数
+  next_review_at,                        -- 艾宾浩斯：D+1/D+3/D+7 → 毕业
+  created_at, updated_at,
+  UNIQUE(child_id, stem_norm)
 );
 
 CREATE TABLE sheets (
   id          TEXT PRIMARY KEY,          -- sh_…
   child_id    TEXT NOT NULL,
   subject     TEXT NOT NULL,
-  spec        TEXT NOT NULL,             -- JSON：出卷指令原文+解析后参数
-  question_ids TEXT NOT NULL,            -- JSON：选题 id + 每题 origin(原题)|variant
+  spec        TEXT NOT NULL,             -- JSON：items[]{no,stem,answer,kind:original|variant,wrong_item_id}
+  question_ids TEXT NOT NULL,            -- JSON：来源 wrong_item id 列表
   pdf_path    TEXT NOT NULL,             -- Mac mini 本地路径
   sent_at     TEXT,                      -- 企微文件消息发送时间
   created_at  TEXT NOT NULL
@@ -170,20 +181,38 @@ worker:  discard → 删本地卷与原图；wrong_off → 对应题 is_wrong=0�
 result:  { ok, paper_id, kind, child_name, total, wrong, checkin?, text: 「记好了… 口算打卡成功」 }
 ```
 
-### paper.sheet（出卷）
+### paper.sheet（出复习卷，2026-11-23 落地）
 ```
-payload: { requester, text: 指令原文 }   # 「出3年级第4单元到第6单元的数学复习卷」
-worker:  参数解析（LLM，输出 JSON：child|grade / subject / unit_from / unit_to /
-         date_from / count / mode: original|variant|mixed）
-         → 唯一匹配孩子则静默；歧义则 result.text 问一句
-         → 选题 → 排版 → chrome headless PDF → 上传服务器(临时) → 触发企微文件消息 → 删
-result:  { ok, sheet_id, picked: n, mode, text: 「卷好了，已发文件。18 题（原 15 + 变式 3）」 }
+payload: { from_user, child?: "布丁"|"奶茶"|"" }
+         # api 确定性解析（parsePaperSheet）：「出复习卷」「布丁复习」「复习错题」
+worker:  wrong_items 选题（mastery<2，错得多/久没碰优先，默认 4 道）
+         → LLM 生成 4 道同结构变式 + 全部正确答案（prompt paper-sheet.md，严格 JSON）
+         → A4 HTML（原题/变式标签+答题空位；卷首印「复习卷 #<id8>」）→ Chrome headless PDF
+         → POST /api/agents/papers/sheets/:id/content?to=<user>（内存直传，服务器不落盘）
+         → api 企微文件消息直发（sendFile，复用 media/upload type=file）
+result:  { ok, sheet_id, count, text: 「布丁的复习卷好了：4 道原题 + 4 道变式，PDF 已发你」 }
+备注：sheets.spec 存每题 {no, stem, answer, kind: original|variant, wrong_item_id}——
+      answer 是出卷时算好的答案键（不回填 questions），判分与变式都用它；
+      孩子做完拍照回传，卷首 #id8 自动关联，回「收」后按错题回写 mastery。
+```
+
+### paper.review（每日复习提醒，2026-11-23）
+```
+schedule: 每天 19:00（sch_paper_review）→ agent 巡检本地 wrong_items
+worker:   next_review_at <= 今天且 mastery<2 的题（D+1/D+3/D+7）；无到期 → text 为空不打扰
+交付:     text 非空 → api 广播给家长（role != child）
+文案:     「错题复习提醒：布丁 5 道该复习了。回「出复习卷」我就出张卷子（也可以说「布丁复习」）。」
 ```
 
 ### paper.query
 ```
-payload: { requester, text }   # 「布丁现在有多少数学错题」「奶茶这周错了什么」
-result:  { ok, text }          # 本地查库，模板化回答
+payload: { from_user, child?: "布丁"|"奶茶"|"", days?: 7 }
+         # 意图在 api 侧确定性解析（parsePaperQuery），不经过模型：
+         # 「布丁这周错了什么」「奶茶有多少错题」「所有的错题」
+         # 时间词：本周/近7天→7；本月/近30天→30；全部/历史→3650
+worker:  本地查 papers.db：status=ready 且 COALESCE(shot_at,created_at) 在窗口内
+         → 按卷列错题（第N题 算式，单卷 ≤8 题，超了「等 N 题」）+ 标签统计 top4
+result:  { ok, text, child, days }   # 指定孩子一段；不指定则每个孩子一段
 ```
 
 ## 6. 识别设计（vision prompt 要点）
@@ -191,8 +220,10 @@ result:  { ok, text }          # 本地查库，模板化回答
 - 输入：一卷全部页图（`--file` 逐页）；输出**严格 JSON**（禁 markdown 围栏）：
   ```json
   { "header": {"name":"奶茶","printed_grade":3,"subject":"数学","title":"第四单元测试","unit":4},
-    "questions": [{"no":1,"stem":"…","type":"fill","tags":["时间单位"],"wrong":true,"page":1}] }
+    "questions": [{"no":1,"stem":"…","type":"fill","tags":["时间单位"],"answer":"…","wrong":true,"page":1}] }
   ```
+- `answer`：孩子最终作答原文（口算得数/填空内容/答句结论，≤120 字）；纯算式题的 `wrong:null`
+  在 parse 阶段用本地确定性求值兜底（calc.py，不调模型）。
 - 判错依据：红叉/红圈/扣分痕迹/订正痕迹；不确定 → `wrong:null` → 预览里列出让家长定。
 - **口算「还没做」判定**：vision 额外输出 `answered_count`（孩子实际写了答案的题数）。
   未作答 ≥80% → 视为整页/大部分没做：删本地临时卷、不建错题、不打卡，回
@@ -230,6 +261,9 @@ result:  { ok, text }          # 本地查库，模板化回答
   本地库、出卷（原题+变式）、chrome PDF、企微文件直发、paper.query。
 - **二期（3~4 天）**：本地错题本 Web UI（家庭 Wi-Fi/Tailscale：浏览/修题/可视化出卷）、
   重做判定闭环（mastery 流转）、复习提醒（reminders + 艾宾浩斯）、同题去重（wrong_count）。
+  ✅ 2026-11-23 已落地后半段：`child_answer` 留存、`wrong_items` 跨卷聚合（wrong_count/mastery）、
+  原题+变式复习卷（标原题/变式，答案键存 spec）、拍照回传判分、D+1/3/7 提醒、看见联动。
+  Web UI 仍未做。
 - **三期**：图题 bbox 精裁、答案页、语音速记、变式题库沉淀。
 
 ## 10. 一期验收（DoD）
@@ -272,5 +306,5 @@ result:  { ok, text }          # 本地查库，模板化回答
      （项目名+孩子，幂等），回复「口算打卡成功」。「收/不收」= 确认/丢弃。
      企微文件消息直发（出卷 PDF）仍属第 4 步。
 4. agent：sheet 参数解析 + 排版模板 + chrome PDF + 交付
-5. agent：paper.query + 微信剧本联调
+5. agent：paper.query ✅（2026-11-23，微信意图解析 + 本地查库文案）
 6. E2E：按 §10 DoD 逐条过

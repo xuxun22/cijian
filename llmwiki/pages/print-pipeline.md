@@ -96,6 +96,30 @@ print_timeout 后还会误报「失败」。
 **遗留**：agent 的 claim/heartbeat 对 urlopen 超时未捕获会崩（launchd 会拉起，
 今晨 05:43 与今日白天各发生过一次），后续应加网络重试。
 
+## 实战记录（2026-11-24）：打印机 IP 漂移 → 任务永远「not responding」
+
+**症状**：微信发起打印，CUPS 显示 `The printer is not responding`，30 分钟超时后自动重试，
+再提交一个新 CUPS 任务，循环等待。用户按住电源、WiFi 灯常亮。
+
+**根因**：打印机 DHCP 换了地址（`.22` → `.101`），旧地址 `.22` 被家里的
+**TL-WDR5620 路由器/AP** 占用——`curl http://192.168.1.22/` 返回的是 TP-Link 管理页，
+而不是打印机。Mac 队列还写死 `ipp://192.168.1.22:631/ipp/print`，任务全发给了路由器。
+
+**排查手法**：
+- `ippfind -T 4` 或 `dns-sd -B _ipp._tcp .` 发现打印机 mDNS 实例
+- `dns-sd -L "<实例名>" _ipp._tcp local` 拿主机名，`dns-sd -G v4 <host>.local` 解析当前 IP
+- `curl http://<ip>/` 看返回的是不是打印机（返回别的设备页 = IP 被占）
+
+**修复**：`lpadmin -p <队列> -E -v ipp://192.168.1.101:631/ipp/print` + `cupsenable`，
+卡住的任务下一轮重试即补打（2026-11-24 20:28 实测成功）。
+**防复发**：路由器给打印机 MAC `6c:0b:5e:cb:22:aa` 做 DHCP 静态绑定（已绑定 .101）。
+
+**软件判定修复**：CUPS 对这种状态输出 `now printing …` + `The printer is not responding.`；
+`printer_state()` 原来只认 `Looking for printer.`，被 `now printing` 抢先判成健康，
+看门狗不触发 → 闷等 30 分钟。现已把 `not responding` 也判为 unreachable
+（3 分钟累计即取消并明确报错），`tests/test_print_state.py` 用真实输出回归。
+教训：**CUPS 的不可达文案不止一种，新增判定要看真实 `lpstat -p/-l` 输出**。
+
 ## 排障速查
 
 - 任务卡 `claimed`：agent 死了。等租约过期被 sweeper 重派，或手动

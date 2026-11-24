@@ -232,6 +232,11 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-24] gotcha | 打印机 IP 漂移（.22→.101，旧 IP 被 TP-Link AP 占用）+ CUPS「not responding」误判健康
+
+任务发给了路由器所以永远不打印；iffind/dns-sd 定位新 IP，lpadmin 改队列后补打成功。
+printer_state 补 not responding→unreachable；预防：路由器 DHCP 绑定打印机 MAC。
+
 ## [2026-11-24] feat | 复习卷题量按题型折算：口算 4 题=1 题，应用题/英语阅读 1 题=1 题；题量随窗口（1周10题配额，2周20封顶）
 
 wrong_items 加 q_type（迁移+回填22条）；TYPE_WEIGHT/select_for_window 按折算配额成对选题；

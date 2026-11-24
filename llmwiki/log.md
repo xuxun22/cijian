@@ -427,3 +427,28 @@ prepare_workspace 只建不删，agent 常驻数周目录一直堆。落地 runn
 只删 `<agent>-<ms>-<pid>` 且超 7 天（CIJIAN_AI_WORKDIR_KEEP_DAYS 可调）的目录，symlink/
 home/不认识的名字不碰；worker 启动 + 任务后（节流 1h）触发。顺带确认 12:37 home 配置缺
 skills 是调试残留、13:31 真实对话已重写正常。见 pages/workdir-cleanup.md。
+
+## [2026-11-25] overview | Jev（TypeSafe System One）适用性调研：家里出口 451，只能从 api 服务器调
+
+家里网络访问 `api.typesafe.ai` / `console.typesafe.ai` 均 451「not available in your region」（cf-ray HKG）；
+腾讯云 api 服务器（美国）403「Must supply an API key」= 可达（~80ms）。契合点只在「乱文本→有限选项」且都在 api 侧：
+出复习卷前的否决闸、错题查询路由（`parsePaperQuery` 构造句 4/8 漏 + 3 句误触）、`parseDailyFeedback`（3/7 漏）；
+agent 侧 worker 正则层要用得经 api 中转、暂不做；打卡分类现在是人声二分，Jev 无增益。
+生成/看图读题/算术不适合。未实施。见 pages/jev-evaluation.md。
+
+## [2026-11-25] gotcha | 微信入口两个错题本流程 bug + 多处正则误触发（已复现，未修）
+
+Jev 调研的副产物，走真实 `/api/wecom/callback` + 临时库 + 假企微客户端复现：
+① 落到 chat 的文本都带 task_id，`recentPaperNotes` 只认空 task_id → 随图说明永远进不了 `paper.ingest`（11-22 的修复只在单测里过）；
+② `consumePhotoForChat` 删 intake 行但没删批次，自动分流的兜底登记把同一张图重新入队。
+另：`parseDailyFeedback` 把「不开心」判成 bright、「今天复习了没」会出复习卷、「我在改孩子的作业」回看板。
+见 pages/wecom-routing-bugs.md。
+
+## [2026-11-25] gotcha | 微信入口 bug 修复：note 独立消费标记、照片不再重复入队、正则收紧
+
+按 11-25 条目逐项修完：① `wecom_messages.note_task_id`（ALTER 在 `migrate()` 第一条）+
+`recentPaperNotes`/`bindPaperNotes` 改用它，随图说明终于能进 `paper.ingest`；
+② `consumePhotoForChat` 改为 `paper_intake.task_id='chat'` 不删行，批次 tick 不再重复入队；
+③ `parseDailyFeedback` 否定式先判；④ `parsePaperSheet` 排除「复习完/复习一下/复习了没」；
+⑤ `parsePaperQuery` 去掉单字语气词并补真查询；⑥ agent worker 的 decide/board/canned/correction/search 全部收紧
+（「保存」需编码上下文才提交）。新增回调入口级 + 批次 tick 级回归。见 pages/wecom-routing-bugs.md。

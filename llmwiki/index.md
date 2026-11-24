@@ -14,10 +14,15 @@
 - [papers-pipeline](pages/papers-pipeline.md) — 错题本（docs/17）：第 1 步已上线——本地 papers.db、AirDrop 图片扫描、180s 多页分组、年级自动成长
 - [weekend-outing](pages/weekend-outing.md) — 周六出门建议：每周六 08:30 推 3 个上海亲子选项（天气/档期/多样性/距离），回 1/2/3 与「反馈：…」；偏好即时固化家庭 wiki
 - [get-takeover](pages/get-takeover.md) — get 产品线（GitLab get-aico 9 仓）由 cijian agent 接管开发的调研结论与一期设计指针；get-dev 已停摆
+- [memory-layers](pages/memory-layers.md) — 记忆长短期分层：动态 id + 命中观测 + 60 天归档（默认 dry-run）+ `memory_search` 晋升
+- [web-search](pages/web-search.md) — 普通对话联网搜索走 OpenCode 原生 `websearch`（AnySearch 中文源），自建 Bing 抓取已下线
+- [jev-evaluation](pages/jev-evaluation.md) — **Jev（TypeSafe System One 判别模型）适用性调研：家里出口 451 地区限制，只能从 api 服务器调**；契合点=意图路由/反馈解析这类「乱文本→有限选项」，不适合生成/看图读题/算术；含离线评测与 fail-open 约束（未实施）
 - [dev-plan-approval](pages/dev-plan-approval.md) — 编码通道计划先行 + 小程序开发看板；JWT/企微身份绑定、同毫秒排序坑
 - [env-and-secrets](pages/env-and-secrets.md) — 密钥与口令的存放位置、轮换方法
 
 ## 踩坑（gotcha）
+
+- [wecom-routing-bugs](pages/wecom-routing-bugs.md) — **微信入口误触发与错题本流程 bug（已修）**：随图说明进不了 paper.ingest、对话消费照片后仍被自动分流入队、「不开心」判成 bright、闲聊触发出复习卷/查错题、worker 正则误伤；含修法与回归测试
 
 - [opencode-latency-bench](pages/opencode-latency-bench.md) — **opencode 启动只有 0.7s（含 MCP 1.4s），对话慢是 glm-5.3-flash 的 ~5s 固定首响应税**；deepseek 同环境 1.5s；附基准与测量方法
 

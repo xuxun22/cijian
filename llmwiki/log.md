@@ -232,6 +232,16 @@ API 在腾讯云美国圣克拉拉，家宽 RTT ~350ms，单流上传 3~30KB/s �
 能力工具 26→30（skill_stats/history/restore/pin），回顾任务 assistant.skill.review（纠正即时 + 每日兜底）。
 同时沉淀两条 gotcha：skills 目录递归扫描、免费模型共享额度。
 
+## [2026-11-24] feat | 复习卷题量按题型折算：口算 4 题=1 题，应用题/英语阅读 1 题=1 题；题量随窗口（1周10题配额，2周20封顶）
+
+wrong_items 加 q_type（迁移+回填22条）；TYPE_WEIGHT/select_for_window 按折算配额成对选题；
+真实数据：布丁 17 道口算错题 → 1周配额10 → 17原题+17变式=34 道。测试 agent 199 / api 194。
+
+## [2026-11-24] feat | 复习卷题量随时间窗：默认 1 周 10 题（5 原题+5 变式），两周 20 题封顶
+
+parsePaperSheet 解析 days（近N天/两周/本月，默认 7）；能力面与 MCP 工具透传 days；
+originals_for_window(days)=round(days/7*5) 下限2上限10。测试 agent 198 / api 194。
+
 ## [2026-11-23] feat | 微信意图路由登记表（routes/intents.ts 六条意图）+ chat 错题工具兜底（paper_wrongs/paper_review_sheet）
 
 命令走确定性规则、问题走工具：正则漏掉的错题问题由 chat 调 paper_wrongs 兜底，

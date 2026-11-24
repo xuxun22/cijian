@@ -142,7 +142,9 @@
 - **跨卷聚合**：`wrong_items`（UNIQUE(孩子, 归一题干)，`norm_stem` 取等号左边）——
   `confirm_paper` 时 upsert，同卷重复 confirm 不重复计数（last_paper_id）；
   历史卷用 `python3 -m cijian_agent.papers.backfill` 回填（幂等，先 --dry-run）。
-- **复习卷**（`paper.sheet`）：选题（mastery<2，错得多/久没碰优先，默认 4 道）→
+- **复习卷**（`paper.sheet`）：**题量随复习时间窗走，并按题型折算**——1 周 = 10 题配额，
+  两周 = 20（封顶）；**口算 4 题算 1 题**，应用题/英语阅读理解 1 题算 1 题（`TYPE_WEIGHT`，
+  一对原题+变式按 2×权重计，封顶 20 原题/40 道）。选题（mastery<2，错得多/久没碰优先）→
   LLM 出 4 道同结构变式+答案 → A4 HTML 原题/变式标签 → Chrome PDF →
   `POST /api/agents/papers/sheets/:id/content` 内存直传 → 企微 `sendFile`。
   卷首印 `复习卷 #<id8>`；**PDF 不落服务器盘**（隐私铁律）。

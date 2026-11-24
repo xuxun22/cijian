@@ -187,10 +187,13 @@ result:  { ok, paper_id, kind, child_name, total, wrong, checkin?, text: 「记�
 
 ### paper.sheet（出复习卷，2026-11-23 落地）
 ```
-payload: { from_user, child?: "布丁"|"奶茶"|"" }
+payload: { from_user, child?: "布丁"|"奶茶"|"", days?: 7 }
          # api 确定性解析（parsePaperSheet）：「出复习卷」「布丁复习」「复习错题」
-worker:  wrong_items 选题（mastery<2，错得多/久没碰优先，默认 4 道）
-         → LLM 生成 4 道同结构变式 + 全部正确答案（prompt paper-sheet.md，严格 JSON）
+         # days = 复习时间窗：默认 7（10 题配额）；两周 14（20 题）；本月 30（封顶 20）
+worker:  wrong_items 选题（mastery<2，错得多/久没碰优先）
+         → 题量按题型折算（TYPE_WEIGHT）：口算 4 题=1 题、应用题/英语阅读 1 题=1 题，
+           一对（原题+变式）按 2×权重 计；封顶 20 原题（40 道）
+         → LLM 生成同结构变式 + 全部正确答案（prompt paper-sheet.md，严格 JSON）
          → A4 HTML（原题/变式标签+答题空位；卷首印「复习卷 #<id8>」）→ Chrome headless PDF
          → POST /api/agents/papers/sheets/:id/content?to=<user>（内存直传，服务器不落盘）
          → api 企微文件消息直发（sendFile，复用 media/upload type=file）

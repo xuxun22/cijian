@@ -158,13 +158,13 @@ observation_options[3], confidence, evidence_refs[]
 - 同一主题/句式 7 天内不重复；`listen` 不靠数据推断，只由家长输入触发。
 - 每日卡不引用试卷题目原文/图片，只引用科目、单元、错题数、订正数。
 
-**`shine-daily-v4` prompt 要点**
+**`shine-daily-v5` prompt 要点**
 
-输入：日期、孩子称呼/年级、昨日/近 7 天打卡（项目、fields、时长、媒体）、本地试卷（`status=ready` 且已订正）、近 7 天闪光条目、wiki `next_observation`/表达偏好、最近 14 天反馈（说了吗/反应/孩子原话）。
+输入：日期、孩子称呼/年级、昨日/近 7 天打卡（项目、fields、时长、媒体）、打卡趋势 `checkin_stats`（按项目：今日完成、连续天数、近 7 天/上一 7 天完成率、口算正确率）、本地试卷 14 天趋势 `papers.progress`（每份卷正确率、近 7 天 vs 上一 7 天错误类型、错题本身由识别模型按复杂度标的 `difficulty` 1-5）、近 7 天闪光条目、wiki `next_observation`/表达偏好、最近 14 天反馈（说了吗/反应/孩子原话）。
 
 输出：`mode`、`headline`、`evidence`、`say_this`、`lighter`、`ask_back`、`deeper`、`practice_id`、`avoid`、`observation_prompt`、`observation_options[3]`、`confidence`、`evidence_refs[]`；一张卡只写一个孩子、最多一件主要的事。
 
-硬规则：只使用输入里的事实；没有过程证据就 `notice`，没有素材就 `invite`，家长输入显示难受就 `listen`；不写分数/排名、不比较兄弟姐妹、不推断动机/情绪、不编细节；没有 ≥3 次同类记录不说「进步」；同一主题/句式 7 天内不重复；`say_this` 具体、克制、像家人说话；`ask_back` 与 `deeper` 必须具体到今天的活动，把评价变成孩子自己的归因；不要写「今天有两条记录/打卡显示」这种系统口吻；有媒体时长写「约 N 分钟」，不写「一段」；`practice_id` 只能从下方最佳实践库/沟通技巧库选一个，且必须与卡片实际做法一致。
+硬规则：只使用输入里的事实；没有过程证据就 `notice`，没有素材就 `invite`，家长输入显示难受就 `listen`；不写分数/排名、不比较兄弟姐妹、不推断动机/情绪、不编细节；没有 ≥3 次可比记录且方向一致不说「进步」，趋势不足只 `notice` 或省略；缺卡、没试卷不提及不暗示；可用错题数/正确率趋势，但不写分数/名次；同一主题/句式 7 天内不重复；`say_this` 具体、克制、像家人说话；`ask_back` 与 `deeper` 必须具体到今天的活动，把评价变成孩子自己的归因；不要写「今天有两条记录/打卡显示」这种系统口吻；有媒体时长写「约 N 分钟」，不写「一段」；`practice_id` 只能从下方最佳实践库/沟通技巧库选一个，且必须与卡片实际做法一致。
 
 **最佳实践映射（OECD 2025）**
 
@@ -292,7 +292,7 @@ observation_options[3], confidence, evidence_refs[]
 ### 0.9 实现与契约（已同步 04/05）
 
 - 新任务 `shine.daily`：agent 20:45 生成，API 完成后即送达；`serialized`（wiki 组），按孩子一天一单，`dedupe_key=shine.daily:<child>:<date>`。
-- 输入：**当日**（Asia/Shanghai）`checkin_records`（含 fields/媒体，以 20:45 已落库为准）+ 本地 `papers.db`（P2；`status=ready`，且有订正信号）+ 当日/近 7 天 `shine_entries` + wiki `next_observation`/偏好 + 最近 14 天反馈。
+- 输入：**当日**（Asia/Shanghai）`checkin_records`（含 fields/媒体，以 20:45 已落库为准）+ 近 14 天打卡趋势 `checkin_stats`（连续/完成率/口算正确率）+ 本地 `papers.db`（P2；`status=ready`，且有订正信号）+ 近 14 天试卷趋势 `papers.progress`（正确率/错误类型/AI 按题目复杂度标的难度）+ 当日/近 7 天 `shine_entries` + wiki `next_observation`/偏好 + 最近 14 天反馈。
 - 存储：wiki `children/<id>/daily/<date>.md|json` 为 agent 侧副本（best-effort）；API 存 `shine_dailies` 缓存 + `shine_daily_feedback`（说了吗/反应/孩子原话 ≤200）。
 - 送达：`deliverChat` 新增 `shine.daily` 分支，发给 `wecom_users` 里 active 的 dad/mom；role 未设置时发给所有 active 家人（避免漏发）；每天指定一人，另一人可换。
 - 反馈：微信回「说了 / 还没说 / 他笑了 / 他没啥反应 / 他不太想听」走确定性意图，不经过大模型；21:30 API 侧跟催一次。

@@ -89,6 +89,7 @@ CREATE TABLE questions (
   stem        TEXT NOT NULL,             -- 题干（识别文本）
   q_type      TEXT,                      -- choice|fill|calc|word|geometry|reading|…
   tags        TEXT,                      -- JSON：知识点粗标 ["分数加减","约分"]
+  difficulty  INTEGER,                   -- AI 按题目复杂度评 1-5（不看年级/单元；2026-11-27）
   is_wrong    INTEGER NOT NULL DEFAULT 0,
   wrong_count INTEGER NOT NULL DEFAULT 1, -- 同题去重后累计（二期）
   mastery     INTEGER NOT NULL DEFAULT 0, -- 0 未掌握 | 1 复习过 | 2 已毕业（二期）
@@ -227,8 +228,11 @@ result:  { ok, text, child, days }   # 指定孩子一段；不指定则每个�
 - 输入：一卷全部页图（`--file` 逐页）；输出**严格 JSON**（禁 markdown 围栏）：
   ```json
   { "header": {"name":"奶茶","printed_grade":3,"subject":"数学","title":"第四单元测试","unit":4},
-    "questions": [{"no":1,"stem":"…","type":"fill","tags":["时间单位"],"answer":"…","wrong":true,"page":1}] }
+    "questions": [{"no":1,"stem":"…","type":"fill","tags":["时间单位"],"difficulty":3,"answer":"…","wrong":true,"page":1}] }
   ```
+- `difficulty`：每道题按**题目本身复杂度**评 1-5（步骤数、运算/概念数量、是否需要转化或多步推理、
+  文字题条件多少）；1=一步口算，3=两步混合，5=多步应用题/综合推理。**不用年级/单元/卷名推断，
+  不因孩子做错调高**；判断不了填 null。每日看见用它比较错题难度变化。
 - `answer`：孩子最终作答原文（口算得数/填空内容/答句结论，≤120 字）；纯算式题的 `wrong:null`
   在 parse 阶段用本地确定性求值兜底（calc.py，不调模型）。
 - 判错依据：红叉/红圈/扣分痕迹/订正痕迹；不确定 → `wrong:null` → 预览里列出让家长定。

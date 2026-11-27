@@ -452,3 +452,43 @@ Jev 调研的副产物，走真实 `/api/wecom/callback` + 临时库 + 假企微
 ③ `parseDailyFeedback` 否定式先判；④ `parsePaperSheet` 排除「复习完/复习一下/复习了没」；
 ⑤ `parsePaperQuery` 去掉单字语气词并补真查询；⑥ agent worker 的 decide/board/canned/correction/search 全部收紧
 （「保存」需编码上下文才提交）。新增回调入口级 + 批次 tick 级回归。见 pages/wecom-routing-bugs.md。
+
+## [2026-11-25] overview | 本机可跑的 Jev 替代：Ollaya + laya:multilingual
+
+Jev 本体无开源权重，只能找 Jev 兼容替代。M2/8GB 上：首推 Ollaya（Rust 单二进制，/v1/systemone 与 TypeSafe 同格式）+
+`laya:multilingual`（322M/683MB，zh-CN MASSIVE 0.650，CPU 5 问 516ms）；次推 `largha:150m`（144M，Apple GPU via MLX，
+但 512 ctx）；`decider/kev` 仅英文，4B+ 不要碰。关键警告：zero-shot typed-decisions 0.352 接近随机、原版过自信
+（ECE 0.314），必须用 100~200 条真实微信文本评测 + `ollaya calibrate` 重拟合温度，并保持 1s 超时与 fail-open。
+见 pages/local-decision-models.md。
+
+## [2026-11-25] gotcha | 本机实测 Ollaya + laya:multilingual：跑得动，但准确率撑不起路由
+
+新仓 https://github.com/xuxun22/local-decision-bench（private）。M2/8GB 上 Ollaya 0.18 把 laya 跑在 MLX/Metal 上：
+3 问 p50 111ms、单问 p50 26ms、phys_footprint 2.3GB、冷加载 6.7s；largha:150m 52ms/1.65GB。
+用 65 条去重后的真实入站微信测 8 类意图：laya 50.8%（CI 38.5–63.1），largha 38.5%，手写关键词基线 87.7%（in-sample）。
+paper_related noul AUC 0.675（6 正例），write_request noul AUC 0.540 ≈ 随机，最佳阈值 0.003 等于全放行 → 不能做状态性门禁。
+中文选项描述比标签名高 20 分；换 choice/true-false 都救不了 noul。结论：运行时可行，准确率/校准不可行；保留正则，
+模型只做非状态性 fallback。见 pages/local-decision-models.md。
+
+## [2026-11-27] gotcha | dev 编码通道没接自动切模型：免费额度打满后 plan 成功、execute 两次失败
+
+11-27 12:33/12:43 同一 dev 任务 `dt_2b318707e6348925` 的 execute 两次报
+`provider.free-limit`；12:43 微信说「切到 deepseek/deepseek-flash」也没用，因为
+payload/MCP 都没有 model 字段。根因：11-20 的额度兜底（3e9eacd）只在 `_chat`，
+`_dev_plan`/`_dev_execute` 直接 `runner.run_dev`；cijian 项目没配 model，默认仍是
+`opencode/deepseek-v4.1-flash-free`（只有 get 项目切了 deepseek）。免费池被 12:05/12:11
+两次 plan 耗尽，execute 撞顶；工作区已留 `cijian-api` 两文件未提交改动，勿 discard。
+另：`ai_review_model` 同时当 chat 兜底和后台主模型，11-22 互换后指向 z.ai，而 z.ai 周额度
+11-25 20:45 已满，导致每日看见/技能回顾连续失败。见 pages/gotcha-dev-quota-fallback-gap.md。
+
+## [2026-11-27] howto | dev/plan 模型链落地：plan glm-5.4→免费→deepseek，dev 免费→deepseek
+
+按爸爸确认的策略改 `cijian-agent`：`ai_plan_model` 默认 `zai-coding-plan/glm-5.4`，
+plan 链再加 `opencode/deepseek-v4.1-flash-free`、`deepseek/deepseek-flash`；dev 链
+`opencode/deepseek-v4.1-flash-free` → `deepseek/deepseek-flash`。新增 `model_chain()` +
+`_run_with_quota_fallback()`，`_dev_plan`/`_dev_execute` 都走额度兜底；execute 换模型时
+追加「先 git status/diff 看残留」提示，返回值带实际 model。`MODEL_QUOTA_RE` 补
+`provider.rate-limit` 与中文「使用上限/额度/限额」。每日看见/技能回顾也从 ai_review_model
+落 ai_model。顺带修记忆回顾 agent 名 `memory-review`→`assistant-memory-review`
+（之前每天 23:30 缺 prompt）。新增 tests/test_dev_models.py；全量 218 测试 + ruff 绿。
+见 pages/gotcha-dev-quota-fallback-gap.md。

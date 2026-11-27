@@ -360,7 +360,7 @@ family/assistant/
 - 小程序 JWT 面：`GET /api/assistant/dev/board`、`GET /dev/:id`、`POST /dev/:id/approve|revise|answer|continue|accept|discard`。
 
 **agent 侧**
-- 新增只读 `dev-plan.md`：read/glob/grep + 只读 shell，禁 `edit`/`npm`/`commit`；输出 ≤20 行中文计划（目标/涉及/步骤/风险）。plan 阶段默认 15 分钟超时（`CIJIAN_AI_PLAN_TIMEOUT`），模型默认跟 `ai_dev_model`（可用 `CIJIAN_AI_PLAN_MODEL` 换更稳的）。
+- 新增只读 `dev-plan.md`：read/glob/grep + 只读 shell，禁 `edit`/`npm`/`commit`；输出 ≤20 行中文计划（目标/涉及/步骤/风险）。plan 阶段默认 15 分钟超时（`CIJIAN_AI_PLAN_TIMEOUT`），模型默认 `zai-coding-plan/glm-5.4`（`CIJIAN_AI_PLAN_MODEL` 可改）；额度打满时按 `CIJIAN_AI_PLAN_FALLBACKS` 依次换 `opencode/deepseek-v4.1-flash-free`、`deepseek/deepseek-flash`。
 - `dev.md` 增加执行阶段约定：遇到「两种做法会显著改变结果」时，在工作区根目录写 `.cijian-ask.json`（`{question, options: [..]}`，2~4 项），写完就停；worker 用 `take_question()` 读走并删文件（不进入 diff/提交），报 `needs_input`。
 - 回答后继续用同一个执行会话；计划会话不用于执行，避免把「讨论方案」的上下文带进改代码。
 

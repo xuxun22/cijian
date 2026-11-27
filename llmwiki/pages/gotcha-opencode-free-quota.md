@@ -1,6 +1,13 @@
 # gotcha：opencode 免费模型是共享额度，压测后连对话一起挂
 
 > 更新：2026-11-20 · 仓库：cijian-agent · 类别：gotcha · 状态：现行
+>
+> **2026-11-27 补正**：本文 11-20 段说的「主 z.ai、兜底 deepseek」已在 11-22 延迟优化时互换
+> （主对话 = `deepseek/deepseek-flash`，`ai_review_model` = `zai-coding-plan/glm-5.3-flash`）。
+> 更关键的是，自动切模型最初只覆盖 `_chat`；dev 的 plan/execute 没有兜底，2026-11-27 因此失败两次。
+> 当天已补上通用模型链（plan: glm-5.4→free→deepseek；dev: free→deepseek），
+> 每日看见/技能回顾也会从 `ai_review_model` 落到 `ai_model`。
+> 见 [gotcha-dev-quota-fallback-gap](gotcha-dev-quota-fallback-gap.md)。
 
 ## 症状（2026-11-20 新增：付费 coding plan 的周/月限额）
 

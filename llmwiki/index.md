@@ -17,6 +17,7 @@
 - [memory-layers](pages/memory-layers.md) — 记忆长短期分层：动态 id + 命中观测 + 60 天归档（默认 dry-run）+ `memory_search` 晋升
 - [web-search](pages/web-search.md) — 普通对话联网搜索走 OpenCode 原生 `websearch`（AnySearch 中文源），自建 Bing 抓取已下线
 - [jev-evaluation](pages/jev-evaluation.md) — **Jev（TypeSafe System One 判别模型）适用性调研：家里出口 451 地区限制，只能从 api 服务器调**；契合点=意图路由/反馈解析这类「乱文本→有限选项」，不适合生成/看图读题/算术；含离线评测与 fail-open 约束（未实施）
+- [local-decision-models](pages/local-decision-models.md) — **本机实测：Ollaya + laya:multilingual 跑得动（2.3GB、单问 26ms、3 问 111ms），但 8 类意图仅 50.8%、write noul AUC 0.54 ≈ 随机；只能做非状态性 fallback，不能替代正则**；含对比、安装/迁移、中文证据与评测坑
 - [dev-plan-approval](pages/dev-plan-approval.md) — 编码通道计划先行 + 小程序开发看板；JWT/企微身份绑定、同毫秒排序坑
 - [env-and-secrets](pages/env-and-secrets.md) — 密钥与口令的存放位置、轮换方法
 
@@ -45,6 +46,7 @@
 - [gotcha-whereami-com](pages/gotcha-whereami-com.md) — whereami.com 是第三方网站非本项目域名；根路径静态文件（WW_verify 等）放 cijian-site/public/ 推 main 即生效
 - [gotcha-skill-archive-recursive](pages/gotcha-skill-archive-recursive.md) — opencode 递归扫描 skills 目录，归档技能放 `.archive/` 里照样被加载；归档要放同级 skills-archive
 - [gotcha-opencode-free-quota](pages/gotcha-opencode-free-quota.md) — 免费模型共享额度，压测后连对话一起 429；错误只在 stdout 事件流，stderr 可能是空的
+- [gotcha-dev-quota-fallback-gap](pages/gotcha-dev-quota-fallback-gap.md) — **dev 编码通道没接自动切模型导致 11-27 两次失败；已修：plan glm-5.4→免费→deepseek，dev 免费→deepseek，后台任务也能落到 deepseek**；含日志时间线、模型链与重试提示
 - [gotcha-airdrop-mtime-watermark](pages/gotcha-airdrop-mtime-watermark.md) — **AirDrop 保留拍摄 mtime/ birthtime，水位线按 mtime 判把当天投递当旧文件永久跳过**；到达时间必须 `max(mtime, birthtime, ctime)`
 
 ## howto 补充

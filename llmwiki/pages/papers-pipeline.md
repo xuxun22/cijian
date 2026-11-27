@@ -154,7 +154,12 @@
 - **提醒**：schedule `sch_paper_review` 每天 19:00 → agent 巡检到期 → 广播家长；
   无到期空文本不打扰。
 - **看见联动**：`shine.daily` 输入附加 `papers`（近 3 天错题摘要+到期数），提示词允许
-  挑**一条**具体说（如「小数除法又错两道，都是商的小数点」）。
+  挑**一条**具体说（如「小数除法又错两道，都是商的小数点」）。2026-11-27 起再附
+  `papers.progress`：近 14 天每份卷 total/wrong/正确率 + 近 7 天 vs 上一 7 天按 tag 的错题数
+  （improved/persistent/new）+ 错题样本与 AI 复杂度。难度不用卷面年级/单元/卷名代理：
+  `paper-ingest` 提示词按题目复杂度给每题 `difficulty` 1-5（存 `questions.difficulty`），
+  每日看见再比较近/上一窗口错题的复杂度讲变化。近 14 天没有 ready 卷时不输出该字段，
+  提示词不提试卷。
 - 测试：agent 195（calc/norm/answer/聚合/复习卷/回写/提醒/看见上下文）、api 192。
 
 ## paper.query：微信一句话查错题（2026-11-23）

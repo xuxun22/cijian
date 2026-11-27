@@ -10,11 +10,14 @@
 ## 关键事实
 
 - **v2 每日看见（2026-11-20 决策 + P1 实现）**：`shine.daily` 每天 20:45 由 scheduler 入队，
-  agent `_daily` 生成（`shine-daily-v4`），API 落 `shine_dailies` 并推给 active 爸妈；每天按日期
+  agent `_daily` 生成（`shine-daily-v5`），API 落 `shine_dailies` 并推给 active 爸妈；每天按日期
   指定一人「今天你来说」；微信回「说了 / 还没说 / 他笑了 / 换我说」走确定性意图；21:30 只跟催一次。
   小程序不再有闪光 tab，微信是主入口；网页 `/api/shine/daily` 只读档案。见 `docs/12 §0`。
 - **每日看见的素材**：当天打卡（按 `checkin_projects.child` 归属，不混家庭项目）+ 近 7 天打卡基线 +
+  `checkin_stats`（按项目 14 天趋势：今日完成、streak、近 7 天 vs 上一 7 天完成率/口算正确率）+
+  `papers.progress`（14 天每份卷正确率、近 7 天 vs 上一 7 天错误类型、错题本身由识别模型按复杂度标的 `difficulty` 1-5）+
   近 7 天手动观察 + `growth.next_observation` + 最近反馈；没有素材输出 `invite`，不硬夸。
+  说「进步」要 ≥3 次可比记录且方向一致；缺卡、没试卷不提及不暗示。
 - **只有完成数据时，notice 不能只写一句描述**：必须给 `ask_back`（轻问题）+ `deeper`（过程/方法/难点），
   按活动名选问题（二胡问哪一段/哪句卡、口算问哪题易错/怎么检查、跳绳问哪组最累/怎么找节奏）；
   不要写「今天有两条记录」这种系统口吻。否则家长收到会觉得单薄、没法接着聊。

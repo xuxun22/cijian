@@ -281,6 +281,11 @@ GET /api/agents/ai/shine/daily-input?date=YYYY-MM-DD          // X-Agent-Key：a
         "checkins":[ { "record_id","date","project":{"id","name","child"},
                        "fields":{},"media_count","media_types","duration_seconds" } ],
         "recent_checkins":[ … ],                                // 近 7 天，用于基线
+        "checkin_stats":[ { "project_id","name","media_type","today":"done|none","streak",
+                            "completion": { "last7": { "done_days","expected_days","rate" },
+                                            "prev7": { … }, "trend":"up|down|same|unknown" },
+                            "accuracy": { "last7","prev7","trend","days_last7","days_prev7" } | null } ],
+                                                            // 按 active 项目；近 14 天无记录 = []
         "recent_entries":[ … ],                                 // 近 7 天手动观察
         "growth": { … } | null,                                 // agent 发布的 growth 视图
         "recent_dailies":[ … ], "recent_feedback":[ … ] }

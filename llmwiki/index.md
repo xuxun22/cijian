@@ -12,7 +12,7 @@
 - [assistant-architecture](pages/assistant-architecture.md) — 家庭助手架构：微信回调→ai_tasks 任务平面→agent(opencode+MCP)→API 代发；三种身份与两个队列
 - [privacy-iron-law](pages/privacy-iron-law.md) — **铁律：腾讯云服务器不存任何家庭私密信息（≤7 天缓存通道可，判据=随时删服务器不丢数据）；真相源=Mac mini；checkin 预览为缓存、合规**
 - [papers-pipeline](pages/papers-pipeline.md) — 错题本（docs/17）：第 1 步已上线——本地 papers.db、AirDrop 图片扫描、180s 多页分组、年级自动成长
-- [weekend-outing](pages/weekend-outing.md) — 周六出门建议：每周六 08:30 推 3 个上海亲子选项（天气/档期/多样性/距离），回 1/2/3 与「反馈：…」；偏好即时固化家庭 wiki
+- [weekend-outing](pages/weekend-outing.md) — 周末亲子活动：每周五 19:00 推 0-5 个上海亲子选项（周六/日天气、年龄、费用、预约截止、距离排序），回 1-N 与「反馈：…」；偏好即时固化家庭 wiki
 - [get-takeover](pages/get-takeover.md) — get 产品线（GitLab get-aico 9 仓）由 cijian agent 接管开发的调研结论与一期设计指针；get-dev 已停摆
 - [memory-layers](pages/memory-layers.md) — 记忆长短期分层：动态 id + 命中观测 + 60 天归档（默认 dry-run）+ `memory_search` 晋升
 - [web-search](pages/web-search.md) — 普通对话联网搜索走 OpenCode 原生 `websearch`（AnySearch 中文源），自建 Bing 抓取已下线

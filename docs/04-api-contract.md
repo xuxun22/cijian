@@ -298,25 +298,33 @@ GET /api/agents/ai/shine/daily-input?date=YYYY-MM-DD          // X-Agent-Key：a
 - `mode` 四值：`praise`（有过程证据）/ `notice`（只描述）/ `listen`（先接住情绪）/ `invite`（无素材，给观察任务）。
 - API 不存 wiki 原文；每日卡由 agent best-effort 写家庭 wiki（`children/<id>/daily/<date>.md|json`），API 这份是缓存/展示。
 
-### 周六出门建议（v1.7）
+### 周末亲子活动（v1.8）
 
 ```
-GET /api/agents/ai/outing/input?date=YYYY-MM-DD               // X-Agent-Key：周六出门备料
-→ 200 { "date":"2026-11-21",
+GET /api/agents/ai/outing/input?date=YYYY-MM-DD               // X-Agent-Key：周六日期
+→ 200 { "date":"2026-11-28",
+        "weekend":{ "saturday":"2026-11-28","sunday":"2026-11-29" },
         "children":[ { "name":"布丁","age":11 } ],
-        "history":[ { "date","chosen_no","chosen_title",
-                      "options":[ { "no","title","type","indoor" } ],
+        "history":[ { "date","chosen_no","chosen_title","reason",
+                      "options":[ { "no","title","type","indoor","minutes" } ],
                       "feedback":[ { "user","choice","comment" } ] } ] }   // 最近 6 次
 
 GET /api/agents/ai/outing/feedback-input?outing_id=ou_…       // X-Agent-Key：反馈固化
 → 200 { "date","chosen_no","chosen_title","options","feedback" } | 404
 ```
 
-- 任务 `outing.suggest`（priority 25，maxAttempts 2）：scheduler 每周六 08:30 入队（payload 带计划日）；
-  agent 联网搜索后报果，API 校验正好 3 个选项并落 `outings`，再发给 active 爸妈。
+- 任务 `outing.suggest`（priority 25，maxAttempts 2）：scheduler 每周五 19:00 入队，
+  入队时把计划日（周五）转成**本周六**写入 `payload.date`；agent 查周六/周日天气后报果，
+  API 校验 0-5 个选项（`minutes` ≤60、按 `minutes` 升序、0 个必须有 `reason`）并落 `outings`，
+  再发给 active 爸妈；文案超企微 2048 字节时按约 1800 字节分片。
+- 选项字段：`minutes`（单程分钟数）、`cost`（`免费` / `收费：…` / `收费情况以现场为准`）、
+  `booking`（预约要求与截止时间）。
+- `outings.date` 存本周六；反馈窗口覆盖周五到周日，`outing_feedback.choice` 为 1-5。
 - 任务 `outing.prefs`（priority 26，maxAttempts 3）：爸妈回复反馈后立即入队
   （dedupe=`outingprefs:<feedback_id>`），agent 拉本次反馈并追加进家庭 wiki
   `family/assistant/outing.md`；不推送任何微信文本。
+- 老库迁移：`sch_outing_suggest` 旧值 `weekly 6 08:30` 自动改为 `weekly 5 19:00` 并重置
+  `next_run_at`。
 
 ## Agent 侧接口（X-Agent-Key）
 
@@ -524,6 +532,14 @@ token = base64url(`media_id.exp`) + HMAC-SHA256（同 `FILE_URL_SECRET`），有
 - 「完成」判定统一为**当天该项目有记录**（投递打卡仍由媒体自动建记录）；统计新增 `completion_rate`（已完成应打日/应打日）
 - 自动指派（AI 提示 / 唯一未完成）跳过 `media_type=none`，媒体不能被指派到手动项目
 - 部署时幂等种入两个手动项目：`cp_math` 每日口算（字段 题数/错题）、`cp_rope` 跳绳（字段 个数/组数）（固定 id，重复执行不重复插入）
+
+## v1.8 变更记录（2026-11-27 · 周末亲子活动）
+
+- 「周六出门建议」改为「周末亲子活动」：每周五 19:00 推送，查周六/周日天气，从浦东 1 小时交通圈推荐 0-5 个
+- `GET /api/agents/ai/outing/input` 增加 `weekend`（周六/周日日期）与 `options[].minutes`；排程计划日（周五）入队时转成周六
+- `outings` 新增 `reason`（0 个选项时说明原因）；`options[]` 新增 `minutes`（≤60）、`booking`（预约截止）；`cost` 统一免费/收费口径
+- 回执支持 1-5，越界编号不落库；文案显示周末日期、费用、预约，超 2048 字节按约 1800 字节分片
+- 老库 `sch_outing_suggest` 由 `weekly 6 08:30` 迁移为 `weekly 5 19:00`，重置 `next_run_at`
 
 ## v1.7 变更记录（2026-11-21 · 周六出门建议）
 

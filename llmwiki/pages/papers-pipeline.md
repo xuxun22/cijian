@@ -141,7 +141,8 @@
   复习卷的答案键在出卷时算好存 `sheets.spec`。
 - **跨卷聚合**：`wrong_items`（UNIQUE(孩子, 归一题干)，`norm_stem` 取等号左边）——
   `confirm_paper` 时 upsert，同卷重复 confirm 不重复计数（last_paper_id）；
-  历史卷用 `python3 -m cijian_agent.papers.backfill` 回填（幂等，先 --dry-run）。
+  同时带入 `questions.difficulty`（1-5，历史缺失为空）、`review_count` 记录复习卷判分次数。
+  历史卷用 `python3 -m cijian_agent.papers.backfill` 回填题型与难度（幂等，先 --dry-run）。
 - **复习卷**（`paper.sheet`）：**题量随复习时间窗走，并按题型折算**——1 周 = 10 题配额，
   两周 = 20（封顶）；**口算 4 题算 1 题**，应用题/英语阅读理解 1 题算 1 题（`TYPE_WEIGHT`，
   一对原题+变式按 2×权重计，封顶 20 原题/40 道）。选题（mastery<2，错得多/久没碰优先）→
@@ -151,8 +152,11 @@
 - **回传判分**：识别时标题里的 #id8 关联 sheets 并直接用卷子归属（attribution=sheet）；
   回「收」→ `apply_review_result`：原题+变式全对 mastery+1（D+3、D+7，满 2 毕业），
   有错 mastery=0、wrong_times+1、明天再来。
-- **提醒**：schedule `sch_paper_review` 每天 19:00 → agent 巡检到期 → 广播家长；
-  无到期空文本不打扰。
+- **提醒**（2026-11-27 改版）：schedule `sch_paper_review` 每天 19:00 → agent 巡检到期 →
+  按「到期 → 逾期越久 → wrong_times 多 → 难度高 → review_count/mastery 少 → 上次错误早」
+  挑 3-5 道（到期不足 3 道用最近到期的补），**直接推题干文字**，家长让小朋友纸上/口头做，
+  不用拍照；无到期空文本不打扰。api 按企微 2048 字节分片发送，防止长题干截断。
+  「布丁复习」仍走 `paper.sheet` 出 PDF 复习卷，原能力不变。
 - **看见联动**：`shine.daily` 输入附加 `papers`（近 3 天错题摘要+到期数），提示词允许
   挑**一条**具体说（如「小数除法又错两道，都是商的小数点」）。2026-11-27 起再附
   `papers.progress`：近 14 天每份卷 total/wrong/正确率 + 近 7 天 vs 上一 7 天按 tag 的错题数

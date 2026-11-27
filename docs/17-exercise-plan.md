@@ -102,7 +102,9 @@ CREATE TABLE questions (
 -- 跨卷聚合错题本（复习闭环真相源；2026-11-23）：UNIQUE(孩子, 归一题干)
 CREATE TABLE wrong_items (
   id, child_id, subject, stem_norm, stem, tags, child_answer,
+  difficulty,                            -- 从 questions.difficulty 带入（1-5，历史缺失为空）
   wrong_times, mastery,                  -- 0 未掌握 | 1 复习中 | 2 毕业
+  review_count,                          -- 复习卷判分回写次数（纸上/口头完成系统感知不到）
   last_paper_id, last_wrong_at,          -- 同卷重复 confirm 不重复计数
   next_review_at,                        -- 艾宾浩斯：D+1/D+3/D+7 → 毕业
   created_at, updated_at,
@@ -204,12 +206,16 @@ result:  { ok, sheet_id, count, text: 「布丁的复习卷好了：4 道原题 
       孩子做完拍照回传，卷首 #id8 自动关联，回「收」后按错题回写 mastery。
 ```
 
-### paper.review（每日复习提醒，2026-11-23）
+### paper.review（每日复习提醒，2026-11-23；2026-11-27 改直接推题干）
 ```
 schedule: 每天 19:00（sch_paper_review）→ agent 巡检本地 wrong_items
-worker:   next_review_at <= 今天且 mastery<2 的题（D+1/D+3/D+7）；无到期 → text 为空不打扰
-交付:     text 非空 → api 广播给家长（role != child）
-文案:     「错题复习提醒：布丁 5 道该复习了。回「出复习卷」我就出张卷子（也可以说「布丁复习」）。」
+worker:   mastery<2 且 next_review_at <= 今天的题（D+1/D+3/D+7）；
+          按「到期 → 逾期越久 → wrong_times 多 → 难度高 → review_count/mastery 少 →
+          last_wrong_at 早」排序，取 3-5 道；到期不足 3 道用最近到期的题补足。
+          无到期 → text 为空不打扰。
+交付:     直接推题干文字（纸上/口头做，不用拍照），api 按企业微信 2048 字节分片广播家长。
+文案:     「布丁 3 道：\n1. 45÷9=\n2. …\n想单独要 PDF 复习卷，回「布丁复习」。」
+备注:     手动出 PDF 复习卷仍走 paper.sheet，能力与文案不变。
 ```
 
 ### paper.query
@@ -274,6 +280,7 @@ result:  { ok, text, child, days }   # 指定孩子一段；不指定则每个�
   重做判定闭环（mastery 流转）、复习提醒（reminders + 艾宾浩斯）、同题去重（wrong_count）。
   ✅ 2026-11-23 已落地后半段：`child_answer` 留存、`wrong_items` 跨卷聚合（wrong_count/mastery）、
   原题+变式复习卷（标原题/变式，答案键存 spec）、拍照回传判分、D+1/3/7 提醒、看见联动。
+  ✅ 2026-11-27 每日提醒改为直接推 3-5 道题干（按难度/复习次数/逾期排序），PDF 复习卷保留。
   Web UI 仍未做。
 - **三期**：图题 bbox 精裁、答案页、语音速记、变式题库沉淀。
 

@@ -15,6 +15,7 @@
 | HTTP | code | 场景 |
 |---|---|---|
 | 400 | `bad_request` | 参数缺失/格式错误 |
+| 400 | `need_child` | 同名项目分孩子、但没说哪个孩子（先问清楚再记） |
 | 401 | `unauthorized` | 未登录 / token 过期 / agent key 无效 |
 | 403 | `forbidden` | 签名文件 URL 无效或不属于本 agent |
 | 404 | `not_found` | 资源不存在 |
@@ -506,7 +507,7 @@ token = base64url(`media_id.exp`) + HMAC-SHA256（同 `FILE_URL_SECRET`），有
 
 - `checkin_projects` 新增 `child` 列（项目归属小朋友；空 = 全家/未分组），API 项目对象返回 `child`
 - 同名项目每个孩子一行：每日口算 = `cp_math`（布丁）/ `cp_math_nc`（奶茶），跳绳 = `cp_rope` / `cp_rope_nc`；记录 `UNIQUE(project_id,date)` 天然按孩子隔离
-- 微信能力面 `checkins/do|undo` 新增 `child` 参数；同名项目不带 child 返回 400 并列出可选孩子；`checkins/stats` 项目标签为 `孩子·项目`
+- 微信能力面 `checkins/do|undo` 新增 `child` 参数；同名项目不带 child 返回 400 `need_child` 并列出可选孩子；`checkins/stats` 项目标签为 `孩子·项目`
 - 种子归属：布丁 = 每日阅读 + 每日口算 + 跳绳；奶茶 = 二胡练习 + 每日口算 + 跳绳
 
 ## v1.6 变更记录（2026-11-19 · 手动打卡项目）
